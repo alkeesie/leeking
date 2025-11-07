@@ -24,11 +24,11 @@ if (file_exists($csv)) {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>leek.ing — Bandit Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
-<nav class="nav wrapper"><a class="brand" href="index.html">leek.ing</a><a href="about.html">About the experiment</a></nav>
+<nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/about.html">About the experiment</a></nav>
 <main class="wrapper">
   <section class="panel" id="controls">
     <h2>Control panel</h2>
@@ -55,7 +55,7 @@ if (file_exists($csv)) {
       </div>
       <div>
         <label>Ad click destination URL</label>
-        <input id="dest" type="text" placeholder="click.html" />
+        <input id="dest" type="text" placeholder="/click.html" />
       </div>
     </div>
     <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
@@ -101,13 +101,13 @@ if (file_exists($csv)) {
   </section>
 </main>
 
-  <div class="ad-slot">
-    <span class="badge" aria-hidden="true">AD</span>
-    <a id="banner-link" href="click.html" rel="nofollow noopener">
-      <img id="banner-img" src="assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90" style="display:block;width:100%;height:auto">
-      <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
-    </a>
-  </div>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="#" rel="nofollow noopener">
+    <img id="banner-img" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90" style="display:block;width:100%;height:auto">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
+  </a>
+</div>
 <footer>© leek.ing</footer>
 
 <script>
@@ -185,7 +185,7 @@ if (file_exists($csv)) {
     const eps  = localStorage.getItem('bandit_eps')||'0.1';
     const wu   = localStorage.getItem('bandit_warmup')||'0';
     const mot  = (localStorage.getItem('bandit_motion') ?? 'true'); // default ON
-    const dest = localStorage.getItem('bandit_dest')||'click.html';
+    const dest = localStorage.getItem('bandit_dest')||'/click.html';
     document.getElementById('algo').value = algo;
     document.getElementById('eps').value = eps;
     document.getElementById('warmup').value = wu;
@@ -198,7 +198,7 @@ if (file_exists($csv)) {
     const eps  = parseFloat(document.getElementById('eps').value||'0.1');
     const wu   = parseInt(document.getElementById('warmup').value||'0');
     const mot  = document.getElementById('motion').value === 'true';
-    const dest = document.getElementById('dest').value || 'click.html';
+    const dest = document.getElementById('dest').value || '/click.html';
     if (window.BanditControls) {
       if (dest) window.BanditControls.setDest(dest);
       window.BanditControls.setWarmup(wu);
@@ -206,7 +206,7 @@ if (file_exists($csv)) {
       window.BanditControls.setAlgorithm(algo, eps); // logs algo_toggle
       alert('Applied. Algorithm set to '+algo.toUpperCase()+ (algo==='eg'?` (ε=${eps})`:''));
     } else {
-      alert('BanditControls not available. Load bandit/bandit.js somewhere on this page.');
+      alert('BanditControls not available. Load /bandit/bandit.js somewhere on this page.');
     }
   };
   document.getElementById('reload').onclick = () => { renderKPIs(rows); renderCTR(rows); renderAlgoTabs(rows); };
@@ -214,6 +214,6 @@ if (file_exists($csv)) {
   initControls();
   renderKPIs(rows); renderCTR(rows); renderAlgoTabs(rows);
 </script>
-<script defer src="bandit/bandit.js"></script>
+<script defer src="/bandit/bandit.js"></script>
 </body>
 </html>
