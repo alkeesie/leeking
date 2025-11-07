@@ -4,29 +4,28 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Click counted — leek.ing</title>
   <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=3">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/control.html">Control panel</a><a href="/about.html">About the experiment</a></nav>
+  <nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/about.html">About the experiment</a></nav>
   <main class="wrapper">
     <div class="card" style="text-align:center">
       <h2 style="margin:8px 0 4px">Your click has been counted ✅</h2>
       <p style="margin:0 0 16px">Thanks for helping us test our banner rotation.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
         <a class="btn btn--brand" href="/dashboard.php">View dashboard</a>
-        <a class="btn" href="/control.html">Go to controls</a>
         <a class="btn" href="/">Go home</a>
       </div>
     </div>
   </main>
   <div class="ad-slot">
     <span class="badge" aria-hidden="true">AD</span>
-    <a id="banner-link" href="/click.html" rel="nofollow noopener">
-      <img id="banner-img" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90">
+    <a id="banner-link" href="#" rel="nofollow noopener">
+      <img id="banner-img" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90" style="display:block;width:100%;height:auto">
       <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
     </a>
   </div>
   <footer>© leek.ing</footer>
-  <script defer src="/bandit/bandit.js?v=3"></script>
+  <script defer src="/bandit/bandit.js"></script>
 </body>
 </html>

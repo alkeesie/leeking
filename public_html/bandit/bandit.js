@@ -1,70 +1,15 @@
 /* bandit.js — leek.ing banner bandit (v2.1, video-first) */
 (() => {
   const EXPERIMENT = "vi_arcade_banner_test";
-
-  const scriptEl = document.currentScript;
-  const ROOT = (() => {
-    if (!scriptEl) return "/";
-    try {
-      const url = new URL(scriptEl.src, location.href);
-      const path = url.pathname.replace(/\/bandit\/bandit\.js.*$/, "/");
-      if (!path || path === "") return "/";
-      return path.endsWith("/") ? path : path + "/";
-    } catch (err) {
-      return "/";
-    }
-  })();
-
-  const ROOT_URL = (() => {
-    try {
-      return new URL(ROOT, location.origin);
-    } catch (err) {
-      return new URL("/", location.origin);
-    }
-  })();
-
-  function resolvePath(path) {
-    if (!path) return "";
-    const trimmed = String(path).trim();
-    if (!trimmed) return "";
-    if (/^(?:[a-z]+:)?\/\//i.test(trimmed)) return trimmed; // absolute URL
-    if (trimmed.startsWith("/")) return trimmed;
-    if (trimmed.startsWith("./")) return resolvePath(trimmed.replace(/^\.\//, ""));
-    try {
-      return new URL(trimmed, ROOT_URL).pathname;
-    } catch (err) {
-      return (ROOT.endsWith("/") ? ROOT : ROOT + "/") + trimmed;
-    }
-  }
-
-  const LOG_ENDPOINT = resolvePath("bandit/log.php");
-
-  function isPlaceholderDest(value){
-    if (!value) return false;
-    try {
-      const parsed = new URL(String(value), location.origin);
-      return parsed.hostname.replace(/^www\./, '').toLowerCase() === 'vi-online-arcade.example';
-    } catch (err) {
-      return /vi-online-arcade\.example/i.test(String(value));
-    }
-  }
+  const LOG_ENDPOINT = "/bandit/log.php";
 
   // Arms use base path without extension (we'll resolve .png and .mp4)
-  const DEFAULT_ARM_DEFS = [
-    { id: 'control_static', label: 'Icons + Play Now (static)', srcBase: 'assets/banners/control_static' },
-    { id: 'games_rock',    label: 'Our games ROCK!',           srcBase: 'assets/banners/games_rock' },
-    { id: 'pac_click',     label: 'Pac-style Click to Play',   srcBase: 'assets/banners/pac_click' },
-    { id: 'pink_replay',   label: 'Game Over / Play Again?',   srcBase: 'assets/banners/pink_replay' },
+  const DEFAULT_ARMS = [
+    { id: 'control_static', label: 'Icons + Play Now (static)', srcBase: '/assets/banners/control_static' },
+    { id: 'games_rock',    label: 'Our games ROCK!',           srcBase: '/assets/banners/games_rock' },
+    { id: 'pac_click',     label: 'Pac-style Click to Play',   srcBase: '/assets/banners/pac_click' },
+    { id: 'pink_replay',   label: 'Game Over / Play Again?',   srcBase: '/assets/banners/pink_replay' },
   ];
-
-  const cleanSrcBase = base => (base || '').trim().replace(/\.(mp4|png)$/i, '');
-  function normaliseArm(arm){
-    if (!arm || !arm.id) return null;
-    const srcBase = cleanSrcBase(arm.srcBase || arm.src);
-    return { ...arm, srcBase };
-  }
-
-  const DEFAULT_ARMS = DEFAULT_ARM_DEFS.map(normaliseArm).filter(Boolean);
 
   // Persisted settings + helpers
   const sid = (() => {
@@ -72,19 +17,7 @@
     if (!s) { s = (crypto.randomUUID?.() || String(Math.random()).slice(2)); localStorage.setItem('bandit_sid', s); }
     return s;
   })();
-  function getArms(){
-    try{
-      const t=localStorage.getItem('bandit_arms');
-      if(t){
-        const j=JSON.parse(t);
-        if(Array.isArray(j)&&j.length){
-          const cleaned = j.map(normaliseArm).filter(Boolean);
-          if (cleaned.length) return cleaned;
-        }
-      }
-    }catch(err){}
-    return DEFAULT_ARMS.map(arm => ({ ...arm }));
-  }
+  function getArms(){ try{ const t=localStorage.getItem('bandit_arms'); if(t){ const j=JSON.parse(t); if(Array.isArray(j)&&j.length) return j; } }catch{} return DEFAULT_ARMS; }
   function getAlgo(){ const qp=new URL(location.href).searchParams.get('algo'); return (qp || localStorage.getItem('bandit_algo') || 'ts').toLowerCase(); }
   function getEps(){ const qp=new URL(location.href).searchParams.get('eps'); return parseFloat(qp || localStorage.getItem('bandit_eps') || '0.1') || 0.1; }
   function getWarmup(){ const qp=new URL(location.href).searchParams.get('wu'); return parseInt(qp || localStorage.getItem('bandit_warmup') || '0') || 0; }
@@ -120,7 +53,6 @@
     let vid = document.getElementById('banner-video');
     if (!vid) { vid = document.createElement('video'); vid.id='banner-video'; vid.width=728; vid.height=90; anchor.appendChild(vid); }
     vid.muted = true; vid.loop = true; vid.playsInline = true; vid.preload = 'metadata';
-    vid.autoplay = true; vid.setAttribute('autoplay', ''); vid.setAttribute('playsinline', '');
     return vid;
   }
 
@@ -129,9 +61,6 @@
     const img  = document.getElementById('banner-img');
     if (!link || !img) return;
     const vid = ensureVideo(link);
-
-    img.hidden = false;
-    vid.hidden = true;
 
     const algoName = getAlgo();
     const EPS = getEps();
@@ -142,29 +71,11 @@
     let idx = (seen < WU)? rnd(ARMS.length) : (()=>{ const last=sessionStorage.getItem('bandit_last'); let k=algo.select(seen); if(ARMS.length>1 && last && ARMS[k].id===last) k=(k+1)%ARMS.length; return k; })();
     const arm = ARMS[idx];
 
-    const base = (arm.srcBase || '').replace(/\.(mp4|png)$/i, '');
-    const png = resolvePath(base + '.png');
-    const mp4 = resolvePath(base + '.mp4');
+    const png = arm.srcBase + '.png';
+    const mp4 = arm.srcBase + '.mp4';
     const useMotion = motionEnabled();
 
-    const storedDestRaw = (localStorage.getItem('bandit_dest') || '').trim();
-    const defaultDest = resolvePath('/click.html') || '/click.html';
-    let destination = defaultDest;
-    if (storedDestRaw) {
-      if (isPlaceholderDest(storedDestRaw)) {
-        localStorage.removeItem('bandit_dest');
-      } else {
-        const resolvedDest = resolvePath(storedDestRaw);
-        if (resolvedDest && !isPlaceholderDest(resolvedDest)) {
-          destination = resolvedDest;
-        }
-      }
-    }
-    try {
-      link.href = new URL(destination, location.origin).toString();
-    } catch (err) {
-      link.href = destination || defaultDest;
-    }
+    link.href = localStorage.getItem('bandit_dest') || '/click.html';
 
     // Always set poster + img src (instant paint)
     img.src = png; img.alt = arm.alt || arm.label || 'Ad';
@@ -174,14 +85,8 @@
     while (vid.firstChild) vid.removeChild(vid.firstChild);
     const src = document.createElement('source'); src.src = mp4; src.type='video/mp4';
     vid.appendChild(src);
-    try { vid.load(); } catch (err) {}
 
-    function showVideo(){
-      img.hidden = true;
-      vid.hidden = false;
-      const p = (typeof vid.play === 'function') ? vid.play() : undefined;
-      if (p && p.catch) p.catch(()=>{ showImage(); });
-    }
+    function showVideo(){ img.hidden = true; vid.hidden = false; const p = vid.play(); if (p && p.catch) p.catch(()=>{ showImage(); }); }
     function showImage(){ try { vid.pause(); } catch {} vid.hidden = true; img.hidden = false; }
 
     // Prefer video unless reduced-motion or explicit Off
@@ -211,26 +116,8 @@
     setAlgorithm(nextAlgo, eps){ const prev = localStorage.getItem('bandit_algo') || 'ts'; localStorage.setItem('bandit_algo', nextAlgo); if(typeof eps==='number') localStorage.setItem('bandit_eps', String(eps)); postLog('algo_toggle', { experiment_name: EXPERIMENT, from: prev, to: nextAlgo, epsilon: String(eps||'') }); },
     setWarmup(n){ localStorage.setItem('bandit_warmup', String(n|0)); },
     setMotion(on){ localStorage.setItem('bandit_motion', on?'true':'false'); },
-    setDest(url){
-      const trimmed = String(url || '').trim();
-      if (!trimmed || isPlaceholderDest(trimmed)) {
-        localStorage.removeItem('bandit_dest');
-        return;
-      }
-      localStorage.setItem('bandit_dest', trimmed);
-    },
-    addArm(arm){
-      const list=getArms();
-      if(list.some(a=>a.id===arm.id)) return false;
-      const normalized = normaliseArm(arm);
-      if (!normalized) return false;
-      list.push(normalized);
-      localStorage.setItem('bandit_arms', JSON.stringify(list));
-      ARMS = list.slice();
-      if (!state.has(normalized.id)) state.set(normalized.id, { n:0, w:0 });
-      postLog('ad_added', { experiment_name: EXPERIMENT, arm_id: normalized.id, arm_label: normalized.label, srcBase: resolvePath(normalized.srcBase) });
-      return true;
-    },
+    setDest(url){ localStorage.setItem('bandit_dest', url); },
+    addArm(arm){ const list=getArms(); if(list.some(a=>a.id===arm.id)) return false; list.push(arm); localStorage.setItem('bandit_arms', JSON.stringify(list)); postLog('ad_added', { experiment_name: EXPERIMENT, arm_id: arm.id, arm_label: arm.label, srcBase: arm.srcBase }); return true; },
     listArms(){ return getArms(); },
   };
 

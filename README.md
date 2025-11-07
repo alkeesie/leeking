@@ -12,7 +12,7 @@ The deployable web root lives in `public_html/` and includes:
 - `dashboard.php` — CSV-backed analytics dashboard with controls for tuning the bandit.
 - `assets/` — banner creative slots (bring your own MP4/PNG files) and the leek.ing logo.
 
-The repository ships **without** the MP4/PNG banner creatives so you can collaborate without committing large binaries. Drop your production-ready 728x90 assets into `public_html/assets/banners/` before deploying (the filenames referenced by default are `control_static`, `games_rock`, `pac_click`, and `pink_replay`). At minimum provide the `.png` poster for each arm so the banner has a static fallback if motion is disabled.
+The repository ships **without** the MP4/PNG banner creatives so you can collaborate without committing large binaries. Drop your production-ready 728x90 assets into `public_html/assets/banners/` before deploying. At minimum provide the `.png` poster for each arm so the banner has a static fallback if motion is disabled.
 
 ## Deploying to WebHostMost (or similar shared hosts)
 
