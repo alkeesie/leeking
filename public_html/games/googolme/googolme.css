@@ -1,0 +1,38 @@
+.googol-layout{display:flex;flex-direction:column;gap:24px}
+
+.googol-intro p{margin:0 0 12px;font-size:1.05rem}
+
+.googol-game{display:flex;flex-direction:column;gap:12px}
+
+.googol-header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px}
+
+.googol-round{margin:0;font-weight:600;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;font-size:.8rem}
+
+.googol-target{margin:4px 0 0;font-size:1.3rem;font-weight:600}
+
+.googol-score{display:flex;gap:16px}
+.googol-score .label{display:block;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.googol-score .value{font-size:1.4rem;font-weight:700}
+
+.googol-controls{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));align-items:end}
+.googol-controls .control{display:flex;flex-direction:column;gap:6px}
+.googol-controls .hint{font-size:.8rem;font-weight:500;color:var(--muted)}
+.googol-controls .range-display{font-size:1.1rem;font-weight:600;text-align:center}
+.googol-controls .submit{align-items:stretch}
+.googol-controls button{width:100%}
+
+.googol-preview{margin:0;font-size:1.1rem;font-weight:600;text-align:center}
+
+.googol-result{min-height:64px;border-radius:16px;padding:16px;background:rgba(0,0,0,.04);font-size:1rem;line-height:1.45}
+.googol-result strong{display:block;margin-bottom:6px;font-size:1.1rem}
+
+.googol-history{margin-top:16px}
+
+@media (prefers-color-scheme: dark){
+  .googol-result{background:rgba(255,255,255,.08)}
+}
+
+@media (max-width:720px){
+  .googol-score{width:100%;justify-content:space-between}
+  .googol-result{font-size:.95rem}
+}

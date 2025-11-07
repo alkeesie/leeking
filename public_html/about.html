@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About the experiment — leek.ing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <nav class="nav wrapper">
+    <a class="brand" href="/">leek.ing</a>
+    <a href="/about.html" aria-current="page">About the experiment</a>
+  </nav>
+
+  <main class="wrapper">
+    <section class="hero" aria-labelledby="about-title">
+      <div class="hero-brand" aria-hidden="true">leek.ing</div>
+      <h1 class="h1" id="about-title"><span class="hero-heading-serif">Behind the banners</span><span class="hero-heading-light">How the experiment works</span></h1>
+      <p class="hero-subtitle">We’re treating each creative like an arm in a classic A/B test so we can study how algorithms explore and exploit.</p>
+    </section>
+
+    <section class="panel" style="margin-top:16px">
+      <h2 style="margin-top:0">What is an A/B test?</h2>
+      <p>An A/B test (or split test) shows different versions of something—here, rotating arcade banners—to different people at random. By comparing how often each version is clicked, we learn which one performs better.</p>
+      <h2>What are we measuring?</h2>
+      <p>This seminar project looks at the multi-armed bandit problem. Each ad creative is an “arm.” We log impressions and clicks, then compare algorithms like Thompson Sampling, UCB1, and ε-greedy to see how quickly they identify the strongest creative while balancing exploration and exploitation.</p>
+      <h2>How you can help</h2>
+      <p>Click the banner that grabs your attention the most. Every impression and click feeds the dashboard and helps us understand regret, convergence, and which creative actually shines. Feel free to try our mini games afterward!</p>
+    </section>
+  </main>
+
+  <div class="ad-slot">
+    <span class="badge" aria-hidden="true">AD</span>
+    <a id="banner-link" href="/click.html" rel="nofollow noopener">
+      <img id="banner-img" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90" style="display:block;width:100%;height:auto">
+      <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
+    </a>
+  </div>
+
+  <footer>© leek.ing</footer>
+  <script defer src="/bandit/bandit.js"></script>
+</body>
+</html>
