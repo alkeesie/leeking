@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flappy Clone</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=3">
+<style>html,body{margin:0;background:#0b1020}</style>
+</head><body>
+<nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/about.html">About the experiment</a></nav>
+<main class="wrapper">
+  <div class="game-shell">
+    <canvas id="game"></canvas>
+  </div>
+</main>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-img" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90" style="display:block;width:100%;height:auto">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
+  </a>
+</div>
+<footer>© leek.ing</footer>
+<script src="https://kaboomjs.com/lib/0.5.0/kaboom.js"></script>
+<script>
+  kaboom({ global: true, canvas: document.querySelector('#game'), width: 480, height: 640, background: [11,16,32] });
+  gravity(1200);
+  const FLOOR = height() - 40; add([rect(width(), 40), pos(0, FLOOR), area(), solid(), color(20,26,46)]);
+  const bird = add([pos(120, height()/2), rect(24,18), color(255,209,102), area(), body(), anchor('center'), 'bird']);
+  const JUMP = 360; onKeyPress('space', () => bird.jump(JUMP)); onClick(() => bird.jump(JUMP));
+  let score=0; const label = add([ text('0'), pos(12,12) ]);
+  function spawn(){ const GAP=140, W=52, speed=180, t=rand(120, height()-220);
+    add([pos(width(), t-GAP/2-height()), rect(W,height()), color(96,160,255), area(), move(LEFT,speed), 'pipe']);
+    add([pos(width(), t+GAP/2), rect(W,height()), color(96,160,255), area(), move(LEFT,speed), 'pipe']);
+    const g = add([pos(width()+W,0), area({width:2,height:height()}), move(LEFT,speed), 'gate']);
+    g.onUpdate(()=>{ if (g.isColliding(bird)) { score++; label.text=score+''; destroy(g);} });
+  }
+  loop(1.2, spawn); spawn(); wait(.6, spawn);
+  bird.onCollide('pipe', ()=>go('over')); bird.onUpdate(()=>{ if (bird.pos.y>FLOOR || bird.pos.y<0) go('over'); });
+  scene('over', ()=>{ add([text(`Game Over\nScore: ${score}\nPress Space/Click`), pos(width()/2,height()/2), anchor('center')]); onKeyPress(()=>location.reload()); onClick(()=>location.reload()); });
+</script>
+<script defer src="/bandit/bandit.js?v=3"></script>
+</body></html>
