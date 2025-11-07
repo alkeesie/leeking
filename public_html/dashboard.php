@@ -206,7 +206,7 @@ if (file_exists($csv)) {
       window.BanditControls.setAlgorithm(algo, eps); // logs algo_toggle
       alert('Applied. Algorithm set to '+algo.toUpperCase()+ (algo==='eg'?` (ε=${eps})`:''));
     } else {
-      alert('BanditControls not available. Load bandit/bandit.js somewhere on this page.');
+      alert('BanditControls not available. Load /bandit/bandit.js somewhere on this page.');
     }
   };
   document.getElementById('reload').onclick = () => { renderKPIs(rows); renderCTR(rows); renderAlgoTabs(rows); };
@@ -214,6 +214,6 @@ if (file_exists($csv)) {
   initControls();
   renderKPIs(rows); renderCTR(rows); renderAlgoTabs(rows);
 </script>
-<script defer src="bandit/bandit.js"></script>
+<script defer src="/bandit/bandit.js"></script>
 </body>
 </html>
