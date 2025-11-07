@@ -3,7 +3,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fruit Jump</title>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=3">
+<link rel="stylesheet" href="/styles.css">
 <style>html,body{margin:0;background:#0b1020}</style>
 </head><body>
 <nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/about.html">About the experiment</a></nav>
@@ -14,15 +14,15 @@
 </main>
 <div class="ad-slot">
   <span class="badge" aria-hidden="true">AD</span>
-  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+  <a id="banner-link" href="#" rel="nofollow noopener">
     <img id="banner-img" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90" style="display:block;width:100%;height:auto">
     <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
   </a>
 </div>
 <footer>© leek.ing</footer>
-<script src="https://kaboomjs.com/lib/0.5.0/kaboom.js"></script>
+<script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
 <script>
-  kaboom({ global: true, canvas: document.querySelector('#game'), width: 480, height: 640, background: [11,16,32] });
+  kaboom({ canvas: document.querySelector('#game'), width: 480, height: 640, background: [11,16,32] });
   gravity(1400);
   const GY=height()-40; add([rect(width(),40), pos(0,GY), area(), solid(), color(20,26,46)]);
   const p = add([ pos(80, GY-30), rect(28,28), color(255,210,90), area(), body(), anchor('botleft') ]);
@@ -35,5 +35,5 @@
   p.onCollide('bomb', ()=>go('over')); p.onUpdate(()=>{ if (p.pos.y>GY+2) go('over'); });
   scene('over', ()=>{ add([text(`Game Over\nScore: ${score}\nPress Space/Click`), pos(width()/2,height()/2), anchor('center')]); onKeyPress(()=>location.reload()); onClick(()=>location.reload()); });
 </script>
-<script defer src="/bandit/bandit.js?v=3"></script>
+<script defer src="/bandit/bandit.js"></script>
 </body></html>
