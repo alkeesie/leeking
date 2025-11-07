@@ -7,7 +7,7 @@ This repository contains the leek.ing promotional arcade site used to demonstrat
 The deployable web root lives in `public_html/` and includes:
 
 - `index.html` — landing page with the rotating banner slot and quick links to games.
-- `games/` — lightweight Kaboom.js games (Flappy, Fruit Jump) plus a placeholder for GoogolMe.
+- `games/` — lightweight Kaboom.js games (Flappy, Fruit Jump) plus the GoogolMe estimation challenge.
 - `bandit/` — front-end algorithm implementation and the PHP logger that appends events to `bandit/logs/bandit_log.csv`.
 - `dashboard.php` — CSV-backed analytics dashboard with controls for tuning the bandit.
 - `assets/` — banner creative slots (bring your own MP4/PNG files) and the leek.ing logo.
