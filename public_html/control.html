@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Control panel — leek.ing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=5">
+</head>
+<body>
+  <nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+  <main class="wrapper" data-control-locked hidden>
+    <section class="hero" aria-labelledby="control-title">
+      <div class="hero-brand" aria-hidden="true">leek.ing</div>
+      <h1 class="h1" id="control-title"><span class="hero-heading-light">Tune the bandit </span><span class="hero-heading-serif">Adjust algorithms &amp; ads</span></h1>
+      <p class="hero-subtitle">Use the form below to change explore/exploit settings, toggle motion, or drop in new creatives. All updates persist locally in your browser.</p>
+    </section>
+
+    <section class="panel" id="controls">
+      <h2>Experiment controls</h2>
+      <div class="row">
+        <div>
+          <label for="algo">Algorithm</label>
+          <select id="algo">
+            <option value="ts">Thompson (default)</option>
+            <option value="ucb">UCB1</option>
+            <option value="eg">ε‑Greedy</option>
+          </select>
+        </div>
+        <div>
+          <label for="eps">ε (only for ε‑Greedy)</label>
+          <input id="eps" type="number" step="0.01" min="0" max="1" value="0.10" />
+        </div>
+        <div>
+          <label for="warmup">Warm‑up impressions</label>
+          <input id="warmup" type="number" step="10" min="0" value="100" />
+        </div>
+        <div>
+          <label for="motion">Motion (MP4 banners)</label>
+          <select id="motion"><option value="false">Off</option><option value="true">On</option></select>
+        </div>
+        <div>
+          <label for="dest">Ad click destination URL</label>
+          <input id="dest" type="text" placeholder="/click.html" />
+        </div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn" id="apply">Apply &amp; Log Toggle</button>
+        <button class="btn secondary" id="reset">Reset to defaults</button>
+      </div>
+    </section>
+
+    <section class="panel" id="manage-ads">
+      <h2>Add advertisement (MP4 + PNG base)</h2>
+      <form id="addAd">
+        <div class="row">
+          <div><label for="ad_id">Arm ID</label><input id="ad_id" type="text" placeholder="unique_id" required /></div>
+          <div><label for="ad_label">Label</label><input id="ad_label" type="text" placeholder="Human label" required /></div>
+          <div><label for="ad_src">Base path (no ext)</label><input id="ad_src" type="text" placeholder="/assets/banners/new_banner" required /></div>
+        </div>
+        <div style="margin-top:10px"><button class="btn">Add to Rotation</button></div>
+        <p class="note">Provide the path without the file extension. The bandit will request both <code>.png</code> and <code>.mp4</code>.</p>
+      </form>
+      <div class="panel" style="margin-top:16px; background:rgba(255,255,255,.45);">
+        <h3 style="margin-top:0">Currently registered arms</h3>
+        <ul id="arm-list" style="margin:0; padding-left:20px"></ul>
+      </div>
+    </section>
+  </main>
+
+  <div class="ad-slot" data-control-locked hidden>
+    <span class="badge" aria-hidden="true">AD</span>
+    <a id="banner-link" href="/click.html" rel="nofollow noopener">
+      <img id="banner-fallback" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90">
+    </a>
+  </div>
+
+  <footer data-control-locked hidden>© leek.ing</footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const PASSWORD = 'S3minar$r';
+      const KEY = 'bandit_control_auth';
+      const locked = document.querySelectorAll('[data-control-locked]');
+
+      function unlock(){ locked.forEach(el => { el.hidden = false; }); }
+
+      if (sessionStorage.getItem(KEY) === 'yes') { unlock(); return; }
+
+      let attempts = 0;
+      while (attempts < 3) {
+        const input = prompt('Enter the control panel password:');
+        if (input === null) { break; }
+        if (input === PASSWORD) {
+          sessionStorage.setItem(KEY, 'yes');
+          unlock();
+          return;
+        }
+        attempts++;
+        alert('Incorrect password.');
+      }
+      alert('Redirecting to the home page.');
+      window.location.href = '/';
+    });
+  </script>
+
+  <script>
+    function initControls(){
+      const algo = localStorage.getItem('bandit_algo')||'ts';
+      const eps  = localStorage.getItem('bandit_eps')||'0.1';
+      const wu   = localStorage.getItem('bandit_warmup')||'0';
+      const mot  = (localStorage.getItem('bandit_motion') ?? 'true');
+      const dest = localStorage.getItem('bandit_dest')||'/click.html';
+      document.getElementById('algo').value = algo;
+      document.getElementById('eps').value = eps;
+      document.getElementById('warmup').value = wu;
+      document.getElementById('motion').value = mot;
+      document.getElementById('dest').value = dest;
+      renderArms();
+    }
+
+    function renderArms(){
+      const listEl = document.getElementById('arm-list');
+      if (!window.BanditControls) { listEl.innerHTML = '<li>bandit.js not loaded.</li>'; return; }
+      const arms = window.BanditControls.listArms?.() || [];
+      if (!arms.length){ listEl.innerHTML = '<li>No custom arms stored. Defaults will be used.</li>'; return; }
+      listEl.innerHTML = arms.map(arm => `<li><strong>${arm.label||arm.id}</strong> <code>${arm.srcBase}</code></li>`).join('');
+    }
+
+    document.getElementById('apply').addEventListener('click', () => {
+      const algo = document.getElementById('algo').value;
+      const eps  = parseFloat(document.getElementById('eps').value||'0.1');
+      const wu   = parseInt(document.getElementById('warmup').value||'0');
+      const mot  = document.getElementById('motion').value === 'true';
+      const dest = document.getElementById('dest').value || '/click.html';
+      if (window.BanditControls) {
+        if (dest) window.BanditControls.setDest(dest);
+        window.BanditControls.setWarmup(wu);
+        window.BanditControls.setMotion(mot);
+        window.BanditControls.setAlgorithm(algo, eps);
+        alert('Applied. Algorithm set to '+algo.toUpperCase()+ (algo==='eg'?` (ε=${eps})`:''));
+      } else {
+        alert('BanditControls not available. Load bandit/bandit.js on this page.');
+      }
+    });
+
+    document.getElementById('reset').addEventListener('click', () => {
+      localStorage.removeItem('bandit_algo');
+      localStorage.removeItem('bandit_eps');
+      localStorage.removeItem('bandit_warmup');
+      localStorage.removeItem('bandit_motion');
+      localStorage.removeItem('bandit_dest');
+      localStorage.removeItem('bandit_arms');
+      initControls();
+      alert('Defaults restored.');
+    });
+
+    document.getElementById('addAd').addEventListener('submit', (evt) => {
+      evt.preventDefault();
+      if (!window.BanditControls) { alert('bandit.js must be loaded to add an arm.'); return; }
+      const id = document.getElementById('ad_id').value.trim();
+      const label = document.getElementById('ad_label').value.trim();
+      const src = document.getElementById('ad_src').value.trim();
+      if (!id || !label || !src) return;
+      const added = window.BanditControls.addArm({ id, label, srcBase: src });
+      if (added) {
+        (evt.target).reset();
+        alert('Added '+label+' to local rotation.');
+        renderArms();
+      } else {
+        alert('That arm ID already exists.');
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', initControls);
+  </script>
+  <script defer src="/bandit/bandit.js?v=5"></script>
+</body>
+</html>

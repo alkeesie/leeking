@@ -1,0 +1,205 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Floppy Blob</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=5">
+<style>html,body{margin:0;background:#0b1020}</style>
+</head><body>
+<nav class="nav nav--on-dark wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+<main class="wrapper">
+  <div class="game-shell">
+    <canvas id="game"></canvas>
+  </div>
+</main>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-fallback" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+  </a>
+</div>
+<footer>© leek.ing</footer>
+<script>
+  (function(){
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const WIDTH = 480;
+    const HEIGHT = 640;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+
+    const GROUND_Y = HEIGHT - 56;
+    const BIRD_RADIUS = 14;
+    const GRAVITY = 0.42;
+    const FLAP_VELOCITY = -9.4;
+    const PIPE_GAP = 160;
+    const PIPE_WIDTH = 72;
+    const PIPE_SPEED = 2.1;
+    const SPAWN_INTERVAL = 150;
+
+    const state = { mode: 'ready', score: 0, best: 0, frame: 0 };
+    const bird = { x: WIDTH * 0.25, y: HEIGHT / 2, vy: 0 };
+    let pipes = [];
+
+    function resetGame(){
+      state.mode = 'ready';
+      state.score = 0;
+      state.frame = 0;
+      bird.y = HEIGHT / 2;
+      bird.vy = 0;
+      pipes = [];
+    }
+
+    function spawnPipe(){
+      const minTop = 60;
+      const maxTop = GROUND_Y - PIPE_GAP - 80;
+      const top = Math.max(minTop, Math.random() * maxTop);
+      pipes.push({ x: WIDTH + PIPE_WIDTH, top, bottom: top + PIPE_GAP, passed: false });
+    }
+
+    function flap(){
+      if (state.mode === 'ready') {
+        state.mode = 'play';
+        state.score = 0;
+        state.frame = 0;
+        pipes = [];
+        bird.vy = FLAP_VELOCITY;
+        spawnPipe();
+        return;
+      }
+      if (state.mode !== 'play') {
+        resetGame();
+        return;
+      }
+      bird.vy = FLAP_VELOCITY;
+    }
+
+    function update(){
+      if (state.mode !== 'play') return;
+
+      state.frame++;
+      bird.vy += GRAVITY;
+      bird.y += bird.vy;
+
+      if (state.frame % SPAWN_INTERVAL === 0) {
+        spawnPipe();
+      }
+
+      pipes.forEach(pipe => { pipe.x -= PIPE_SPEED; });
+      pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > -10);
+
+      pipes.forEach(pipe => {
+        if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
+          pipe.passed = true;
+          state.score += 1;
+          state.best = Math.max(state.best, state.score);
+        }
+      });
+
+      if (bird.y + BIRD_RADIUS >= GROUND_Y || bird.y - BIRD_RADIUS <= 0) {
+        state.mode = 'over';
+        return;
+      }
+
+      for (const pipe of pipes) {
+        const withinX = bird.x + BIRD_RADIUS > pipe.x && bird.x - BIRD_RADIUS < pipe.x + PIPE_WIDTH;
+        const hitTop = bird.y - BIRD_RADIUS < pipe.top;
+        const hitBottom = bird.y + BIRD_RADIUS > pipe.bottom;
+        if (withinX && (hitTop || hitBottom)) {
+          state.mode = 'over';
+          break;
+        }
+      }
+    }
+
+    function drawBackground(){
+      ctx.fillStyle = '#0b1020';
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      ctx.fillStyle = '#141b33';
+      ctx.fillRect(0, GROUND_Y, WIDTH, HEIGHT - GROUND_Y);
+    }
+
+    function drawPipes(){
+      ctx.fillStyle = '#f4a6c6';
+      pipes.forEach(pipe => {
+        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.top);
+        ctx.fillRect(pipe.x, pipe.bottom, PIPE_WIDTH, HEIGHT - pipe.bottom);
+      });
+    }
+
+    function drawBird(){
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath();
+      const displayY = state.mode === 'ready'
+        ? HEIGHT / 2 + Math.sin(Date.now() / 420) * 10
+        : bird.y;
+      ctx.arc(bird.x, displayY, BIRD_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f3722c';
+      ctx.beginPath();
+      ctx.arc(bird.x + 10, displayY, 6, -0.3, Math.PI * 0.3);
+      ctx.fill();
+    }
+
+    function drawScore(){
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '32px "Lato", sans-serif';
+      ctx.fillText(state.score.toString(), 16, 42);
+      ctx.font = '16px "Lato", sans-serif';
+      ctx.fillText(`Best: ${state.best}`, 16, 64);
+    }
+
+    function drawReady(){
+      if (state.mode !== 'ready') return;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(48, HEIGHT / 2 - 80, WIDTH - 96, 160);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = '28px "Lora", serif';
+      ctx.fillText('Floppy Blob', WIDTH / 2, HEIGHT / 2 - 16);
+      ctx.font = '18px "Lato", sans-serif';
+      ctx.fillText('Tap or press space to play', WIDTH / 2, HEIGHT / 2 + 18);
+      ctx.textAlign = 'left';
+    }
+
+    function drawGameOver(){
+      if (state.mode !== 'over') return;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(40, HEIGHT / 2 - 80, WIDTH - 80, 160);
+      ctx.fillStyle = '#fff';
+      ctx.font = '28px "Lora", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Game over', WIDTH / 2, HEIGHT / 2 - 18);
+      ctx.font = '18px "Lato", sans-serif';
+      ctx.fillText(`Score: ${state.score}`, WIDTH / 2, HEIGHT / 2 + 12);
+      ctx.fillText('Tap or press space to try again', WIDTH / 2, HEIGHT / 2 + 42);
+      ctx.textAlign = 'left';
+    }
+
+    function loop(){
+      update();
+      drawBackground();
+      drawPipes();
+      drawBird();
+      drawScore();
+      drawReady();
+      drawGameOver();
+      requestAnimationFrame(loop);
+    }
+
+    function handleKey(e){
+      if (e.code === 'Space') {
+        e.preventDefault();
+        flap();
+      }
+    }
+
+    canvas.addEventListener('pointerdown', flap);
+    window.addEventListener('keydown', handleKey);
+
+    resetGame();
+    loop();
+  })();
+</script>
+<script defer src="/bandit/bandit.js?v=5"></script>
+</body></html>

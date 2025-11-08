@@ -1,0 +1,53 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hangman Redux</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=5">
+<link rel="stylesheet" href="/games/hangman/game.css?v=1">
+</head><body>
+<nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+<main class="wrapper">
+  <div class="game-shell game-shell--light">
+    <header class="hang-header">
+      <div>
+        <h1>Hangman Redux</h1>
+        <p>Guess the hidden word before the little buddy slips. Tap letters or use your keyboard.</p>
+      </div>
+      <div class="scoreboard">
+        <div class="score-box"><span class="label">Wins</span><span id="wins">0</span></div>
+        <div class="score-box"><span class="label">Streak</span><span id="streak">0</span></div>
+      </div>
+    </header>
+    <div class="hangman" id="hangman" aria-hidden="true">
+      <svg viewBox="0 0 200 220">
+        <line class="base" x1="10" y1="210" x2="190" y2="210" />
+        <line class="pole" x1="50" y1="210" x2="50" y2="20" />
+        <line class="beam" x1="50" y1="20" x2="140" y2="20" />
+        <line class="rope" x1="140" y1="20" x2="140" y2="50" />
+        <circle class="part head" cx="140" cy="70" r="20" />
+        <line class="part body" x1="140" y1="90" x2="140" y2="140" />
+        <line class="part arm left" x1="140" y1="110" x2="112" y2="120" />
+        <line class="part arm right" x1="140" y1="110" x2="168" y2="120" />
+        <line class="part leg left" x1="140" y1="140" x2="118" y2="180" />
+        <line class="part leg right" x1="140" y1="140" x2="162" y2="180" />
+      </svg>
+    </div>
+    <div class="word" id="word" aria-live="polite"></div>
+    <div class="alphabet" id="alphabet"></div>
+    <div class="controls">
+      <button class="btn secondary" id="newGame">New word</button>
+    </div>
+    <p class="note">Hint: all words are lowercase nouns pulled from the cute side of the dictionary.</p>
+  </div>
+</main>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-fallback" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+  </a>
+</div>
+<footer>© leek.ing</footer>
+<script defer src="/games/hangman/game.js?v=1"></script>
+<script defer src="/bandit/bandit.js?v=5"></script>
+</body></html>
