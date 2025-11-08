@@ -11,9 +11,9 @@ The deployable web root lives in `public_html/` and includes:
 - `bandit/` — front-end algorithm implementation and the PHP logger that appends events to `bandit/logs/bandit_log.csv`.
 - `dashboard.php` — CSV-backed analytics dashboard summarising performance and regret.
 - `control.html` — password-gated control panel for switching algorithms and managing banner arms (password: `S3minar$r`).
-- `assets/` — banner creative slots (bring your own MP4/PNG files) and the leek.ing logo.
+- `assets/` — banner creative slots (bring your own MP4/PNG files), optional audio folders, and the leek.ing logo.
 
-The repository ships **without** the MP4/PNG banner creatives so you can collaborate without committing large binaries. Drop your production-ready 728x90 assets into `public_html/assets/banners/` before deploying (the filenames referenced by default are `control_static`, `games_rock`, `pac_click`, and `pink_replay`). At minimum provide the `.png` poster for each arm so the banner has a static fallback if motion is disabled.
+The repository ships **without** the MP4/PNG banner creatives and audio clips so you can collaborate without committing large binaries. Drop your production-ready 728x90 assets into `public_html/assets/banners/` before deploying (the filenames referenced by default are `control_static`, `games_rock`, `pac_click`, and `pink_replay`). Game-specific sounds belong in `public_html/assets/audio/`—see that folder's README for the expected filenames.
 
 ## Deploying to WebHostMost (or similar shared hosts)
 

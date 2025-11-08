@@ -62,11 +62,31 @@
     { id: 'pink_replay',   label: 'Game Over / Play Again?',   srcBase: 'assets/banners/pink_replay' },
   ];
 
-  const cleanSrcBase = base => (base || '').trim().replace(/\.(mp4|png)$/i, '');
+  const cleanSrcBase = base => (base || '').trim().replace(/\.(mp4|png|svg)$/i, '');
+  const cleanPath = path => (path || '').trim();
   function normaliseArm(arm){
     if (!arm || !arm.id) return null;
+    const normalized = {
+      id: String(arm.id),
+      label: arm.label || arm.id,
+      alt: arm.alt || arm.label || arm.id,
+    };
+
     const srcBase = cleanSrcBase(arm.srcBase || arm.src);
-    return { ...arm, srcBase };
+    if (srcBase) normalized.srcBase = srcBase;
+
+    const poster = cleanPath(arm.poster || arm.image || '');
+    const video = cleanPath(arm.video || '');
+
+    if (poster) normalized.poster = poster;
+    if (video) normalized.video = video;
+
+    if (srcBase) {
+      if (!normalized.poster) normalized.poster = `${srcBase}.png`;
+      if (!normalized.video) normalized.video = `${srcBase}.mp4`;
+    }
+
+    return normalized;
   }
 
   const DEFAULT_ARMS = DEFAULT_ARM_DEFS.map(normaliseArm).filter(Boolean);
@@ -120,6 +140,11 @@
   function betaSample(a,b){ const x=gammaSample(a), y=gammaSample(b); return x/(x+y); }
   class Thompson { select(){ let best=0,bv=-1; ARMS.forEach((a,i)=>{ const s=state.get(a.id); const alpha=1+s.w, beta=1+(s.n-s.w); const draw=betaSample(alpha,beta); if(draw>bv){bv=draw; best=i;} }); return best; } }
 
+  function fallbackSvg(label) {
+    const text = encodeURIComponent((label || 'leek.ing banner').slice(0, 32));
+    return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='728' height='90' viewBox='0 0 728 90'%3E%3Crect width='728' height='90' rx='18' fill='%23f2e8ff'/%3E%3Ctext x='364' y='54' text-anchor='middle' font-family='Lato,Open Sans,Arial,sans-serif' font-size='30' font-weight='600' fill='%23321b53'%3E${text}%3C/text%3E%3C/svg%3E`;
+  }
+
   function mountAd(){
     const link = document.getElementById('banner-link');
     if (!link) return;
@@ -135,16 +160,23 @@
       if (el) link.appendChild(el);
     }
 
-    function createImage(src, alt){
+    function createImage(src, alt, label){
+      const fallback = fallbackSvg(label);
       const img = document.createElement('img');
-      img.src = src;
+      img.src = src || fallback;
       img.alt = alt;
       img.width = 728;
       img.height = 90;
+      img.addEventListener('error', () => {
+        if (img.src !== fallback) {
+          img.src = fallback;
+        }
+      }, { once: true });
       return img;
     }
 
-    function createVideo(png, mp4){
+    function createVideo(poster, mp4, label){
+      if (!mp4) return null;
       const vid = document.createElement('video');
       vid.width = 728;
       vid.height = 90;
@@ -156,7 +188,7 @@
       vid.setAttribute('playsinline', '');
       vid.setAttribute('muted', '');
       vid.setAttribute('autoplay', '');
-      vid.poster = png;
+      vid.poster = poster || fallbackSvg(label);
       const source = document.createElement('source');
       source.src = mp4;
       source.type = 'video/mp4';
@@ -173,9 +205,10 @@
     let idx = (seen < WU)? rnd(ARMS.length) : (()=>{ const last=sessionStorage.getItem('bandit_last'); let k=algo.select(seen); if(ARMS.length>1 && last && ARMS[k].id===last) k=(k+1)%ARMS.length; return k; })();
     const arm = ARMS[idx];
 
-    const base = (arm.srcBase || '').replace(/\.(mp4|png)$/i, '');
-    const png = resolvePath(base + '.png');
-    const mp4 = resolvePath(base + '.mp4');
+    const base = (arm.srcBase || '').replace(/\.(mp4|png|svg)$/i, '');
+    const posterPath = arm.poster ? resolvePath(arm.poster) : (base ? resolvePath(base + '.png') : '');
+    const imagePath = arm.image ? resolvePath(arm.image) : posterPath;
+    const mp4 = arm.video ? resolvePath(arm.video) : (base ? resolvePath(base + '.mp4') : '');
     const useMotion = motionEnabled();
 
     const storedDestRaw = (localStorage.getItem('bandit_dest') || '').trim();
@@ -201,13 +234,19 @@
     const altText = arm.alt || arm.label || 'Ad';
     link.setAttribute('aria-label', altText);
 
+    const imageSrc = imagePath || posterPath;
+
     function showImage(){
-      const img = createImage(png, altText);
+      const img = createImage(imageSrc, altText, arm.label);
       setMedia(img);
     }
 
     function showVideo(){
-      const vid = createVideo(png, mp4);
+      const vid = createVideo(posterPath || imageSrc, mp4, arm.label);
+      if (!vid) {
+        showImage();
+        return;
+      }
       vid.addEventListener('error', showImage, { once:true });
       setMedia(vid);
       try {

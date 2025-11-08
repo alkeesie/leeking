@@ -1,6 +1,7 @@
 (() => {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  const words = ['robot', 'lemon', 'bunny', 'tulip', 'pixel', 'spark', 'candy', 'vapor', 'raven', 'siren', 'fairy', 'sugar', 'comet', 'panda', 'mercy', 'honey'];
+  const WORDS_URL = '/games/hangman/words.json?v=1';
+  let words = ['robot', 'lemon', 'bunny', 'tulip', 'pixel', 'spark', 'candy', 'vapor', 'raven', 'siren', 'fairy', 'sugar', 'comet', 'panda', 'mercy', 'honey'];
   const maxMisses = 6;
 
   const hangmanEl = document.getElementById('hangman');
@@ -61,7 +62,11 @@
   }
 
   function updateHangman(){
-    hangmanEl.className = `hangman show-${Math.min(misses, maxMisses)}`;
+    const classes = ['hangman'];
+    for (let i = 1; i <= Math.min(misses, maxMisses); i++) {
+      classes.push(`show-${i}`);
+    }
+    hangmanEl.className = classes.join(' ');
   }
 
   function handleGuess(letter, button){
@@ -112,6 +117,20 @@
     updateHangman();
   }
 
+  async function loadWords(){
+    try {
+      const response = await fetch(WORDS_URL, { cache: 'reload' });
+      if (response.ok) {
+        const list = await response.json();
+        if (Array.isArray(list) && list.length) {
+          words = list.map(w => String(w).toLowerCase()).filter(w => /^[a-z]{4,10}$/.test(w));
+        }
+      }
+    } catch (err) {
+      console.warn('Hangman word list fallback in use', err);
+    }
+  }
+
   newGameBtn.addEventListener('click', () => {
     newGame();
     showToast('Fresh word ready');
@@ -126,5 +145,5 @@
     }
   });
 
-  newGame();
+  loadWords().finally(newGame);
 })();

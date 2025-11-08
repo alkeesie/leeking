@@ -4,8 +4,8 @@
 <title>Floppy Blob</title>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/styles.css?v=5">
-<style>html,body{margin:0;background:#0b1020}</style>
-</head><body>
+<style>html,body{margin:0;background:#0b1020;height:100%;overflow:hidden}canvas{touch-action:none}</style>
+</head><body class="game-page">
 <nav class="nav nav--on-dark wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
 <main class="wrapper">
   <div class="game-shell">
@@ -30,14 +30,57 @@
 
     const GROUND_Y = HEIGHT - 56;
     const BIRD_RADIUS = 14;
-    const GRAVITY = 0.42;
-    const FLAP_VELOCITY = -9.4;
-    const PIPE_GAP = 160;
-    const PIPE_WIDTH = 72;
-    const PIPE_SPEED = 2.1;
+    const GRAVITY = 0.38;
+    const FLAP_VELOCITY = -8.9;
+    const PIPE_GAP = 150;
+    const PIPE_WIDTH = 68;
+    const PIPE_SPEED = 1.85;
     const SPAWN_INTERVAL = 150;
 
-    const state = { mode: 'ready', score: 0, best: 0, frame: 0 };
+    function loadSound(path, { loop = false, volume = 1 } = {}) {
+      if (!path || typeof Audio === 'undefined') {
+        return { play: () => {}, stop: () => {} };
+      }
+      const template = new Audio(path);
+      template.preload = 'auto';
+      template.volume = volume;
+      template.loop = loop;
+      let loopInstance = null;
+      return {
+        play() {
+          if (loop) {
+            if (loopInstance && !loopInstance.paused) {
+              loopInstance.currentTime = 0;
+              return loopInstance;
+            }
+            loopInstance = template.cloneNode(true);
+            loopInstance.volume = volume;
+            loopInstance.loop = true;
+            loopInstance.play().catch(() => {});
+            return loopInstance;
+          }
+          const inst = template.cloneNode(true);
+          inst.volume = volume;
+          inst.play().catch(() => {});
+          return inst;
+        },
+        stop() {
+          if (loopInstance) {
+            loopInstance.pause();
+            loopInstance.currentTime = 0;
+            loopInstance = null;
+          }
+        }
+      };
+    }
+
+    const sounds = {
+      flap: loadSound('/assets/audio/floppy/flap.mp3'),
+      pass: loadSound('/assets/audio/floppy/pass.mp3'),
+      lose: loadSound('/assets/audio/floppy/lose.mp3')
+    };
+
+    const state = { mode: 'ready', score: 0, best: 0, frame: 0, playedLose: false };
     const bird = { x: WIDTH * 0.25, y: HEIGHT / 2, vy: 0 };
     let pipes = [];
 
@@ -45,6 +88,7 @@
       state.mode = 'ready';
       state.score = 0;
       state.frame = 0;
+      state.playedLose = false;
       bird.y = HEIGHT / 2;
       bird.vy = 0;
       pipes = [];
@@ -62,9 +106,11 @@
         state.mode = 'play';
         state.score = 0;
         state.frame = 0;
+        state.playedLose = false;
         pipes = [];
         bird.vy = FLAP_VELOCITY;
         spawnPipe();
+        sounds.flap.play();
         return;
       }
       if (state.mode !== 'play') {
@@ -72,6 +118,7 @@
         return;
       }
       bird.vy = FLAP_VELOCITY;
+      sounds.flap.play();
     }
 
     function update(){
@@ -93,11 +140,16 @@
           pipe.passed = true;
           state.score += 1;
           state.best = Math.max(state.best, state.score);
+          sounds.pass.play();
         }
       });
 
       if (bird.y + BIRD_RADIUS >= GROUND_Y || bird.y - BIRD_RADIUS <= 0) {
         state.mode = 'over';
+        if (!state.playedLose) {
+          sounds.lose.play();
+          state.playedLose = true;
+        }
         return;
       }
 
@@ -107,6 +159,10 @@
         const hitBottom = bird.y + BIRD_RADIUS > pipe.bottom;
         if (withinX && (hitTop || hitBottom)) {
           state.mode = 'over';
+          if (!state.playedLose) {
+            sounds.lose.play();
+            state.playedLose = true;
+          }
           break;
         }
       }
@@ -120,7 +176,7 @@
     }
 
     function drawPipes(){
-      ctx.fillStyle = '#f4a6c6';
+      ctx.fillStyle = '#f5a6d6';
       pipes.forEach(pipe => {
         ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.top);
         ctx.fillRect(pipe.x, pipe.bottom, PIPE_WIDTH, HEIGHT - pipe.bottom);

@@ -193,10 +193,12 @@
 
   let touchStart = null;
   function handleTouchStart(e){
+    e.preventDefault();
     const touch = e.touches[0];
     touchStart = { x: touch.clientX, y: touch.clientY };
   }
   function handleTouchEnd(e){
+    e.preventDefault();
     if (!touchStart) return;
     const touch = e.changedTouches[0];
     const dx = touch.clientX - touchStart.x;
@@ -214,8 +216,9 @@
 
   restartBtn.addEventListener('click', restart);
   window.addEventListener('keydown', handleKey);
-  gridEl.addEventListener('touchstart', handleTouchStart, { passive: true });
-  gridEl.addEventListener('touchend', handleTouchEnd, { passive: true });
+  gridEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+  gridEl.addEventListener('touchend', handleTouchEnd, { passive: false });
+  gridEl.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
   restart();
 })();

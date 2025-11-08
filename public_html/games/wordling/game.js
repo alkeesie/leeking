@@ -5,7 +5,9 @@
   const winsEl = document.getElementById('wins');
   const streakEl = document.getElementById('streak');
 
-  const WORDS = ['LEMON','PLANT','BERRY','ROBOT','PIXEL','QUEEN','NINJA','FRUIT','SHAPE','ALIGN','BLOOM','CLOUD','MIRTH','SWEET','TOAST','VIVID','GLARE','FRAME','MUSIC','LIGHT'];
+  const FALLBACK_WORDS = ['LEMON','PLANT','BERRY','ROBOT','PIXEL','QUEEN','NINJA','FRUIT','SHAPE','ALIGN','BLOOM','CLOUD','MIRTH','SWEET','TOAST','VIVID','GLARE','FRAME','MUSIC','LIGHT'];
+  const SOLUTIONS_URL = 'https://raw.githubusercontent.com/tabatkins/wordle-list/main/solutions';
+  const ALLOWED_URL = 'https://raw.githubusercontent.com/tabatkins/wordle-list/main/words';
   const MAX_ROWS = 6;
   const COLS = 5;
 
@@ -14,13 +16,15 @@
   let col = 0;
   let grid = [];
   let keyboardState = new Map();
+  let solutionList = FALLBACK_WORDS.slice();
+  let allowedSet = new Set(FALLBACK_WORDS);
   let wins = parseInt(localStorage.getItem('leeking_wordling_wins') || '0', 10);
   let streak = parseInt(localStorage.getItem('leeking_wordling_streak') || '0', 10);
   winsEl.textContent = wins;
   streakEl.textContent = streak;
 
   function randomWord(){
-    return WORDS[Math.floor(Math.random() * WORDS.length)];
+    return solutionList[Math.floor(Math.random() * solutionList.length)];
   }
 
   function showToast(text){
@@ -170,7 +174,7 @@
       return;
     }
     const guess = grid[row].join('');
-    if (!WORDS.includes(guess)) {
+    if (!allowedSet.has(guess)) {
       showToast('Word not in list');
       return;
     }
@@ -210,11 +214,36 @@
     updateTiles();
   }
 
+  async function loadDictionary(){
+    try {
+      const [solutionsResp, allowedResp] = await Promise.all([
+        fetch(SOLUTIONS_URL, { mode: 'cors', cache: 'reload' }),
+        fetch(ALLOWED_URL, { mode: 'cors', cache: 'reload' })
+      ]);
+      const normalise = text => text.split(/\s+/).map(w => w.trim().toUpperCase()).filter(w => w.length === 5);
+      if (solutionsResp.ok) {
+        const text = await solutionsResp.text();
+        const words = normalise(text);
+        if (words.length) {
+          solutionList = words;
+        }
+      }
+      const allowedWords = new Set(solutionList);
+      if (allowedResp.ok) {
+        const text = await allowedResp.text();
+        normalise(text).forEach(w => allowedWords.add(w));
+      }
+      if (allowedWords.size) allowedSet = allowedWords;
+    } catch (err) {
+      console.warn('Wordling dictionary fallback in use', err);
+    }
+  }
+
   newGameBtn.addEventListener('click', () => {
     newGame();
     showToast('Fresh word loaded');
   });
   window.addEventListener('keydown', handleKeydown);
 
-  newGame();
+  loadDictionary().finally(newGame);
 })();
