@@ -15,7 +15,8 @@
 <div class="ad-slot">
   <span class="badge" aria-hidden="true">AD</span>
   <a id="banner-link" href="/click.html" rel="nofollow noopener">
-    <img id="banner-fallback" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+    <img id="banner-img" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
   </a>
 </div>
 <footer>© leek.ing</footer>
@@ -30,12 +31,13 @@
 
     const GROUND_Y = HEIGHT - 56;
     const BIRD_RADIUS = 14;
-    const GRAVITY = 0.38;
-    const FLAP_VELOCITY = -8.9;
-    const PIPE_GAP = 150;
+    const GRAVITY = 0.45;
+    const FLAP_VELOCITY = -9.8;
+    const PIPE_GAP = 152;
     const PIPE_WIDTH = 68;
-    const PIPE_SPEED = 1.85;
-    const SPAWN_INTERVAL = 150;
+    const PIPE_SPEED = 2.15;
+    const SPAWN_INTERVAL = 120;
+    const READY_BOB_SPEED = 420;
 
     function loadSound(path, { loop = false, volume = 1 } = {}) {
       if (!path || typeof Audio === 'undefined') {
@@ -84,6 +86,18 @@
     const bird = { x: WIDTH * 0.25, y: HEIGHT / 2, vy: 0 };
     let pipes = [];
 
+    function resizeCanvas(){
+      const availableHeight = Math.max(window.innerHeight - 220, 320);
+      const scale = Math.min(1, window.innerWidth / WIDTH, availableHeight / HEIGHT);
+      const cssWidth = Math.max(320, WIDTH * scale);
+      const cssHeight = HEIGHT * (cssWidth / WIDTH);
+      canvas.style.width = cssWidth + 'px';
+      canvas.style.height = cssHeight + 'px';
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
     function resetGame(){
       state.mode = 'ready';
       state.score = 0;
@@ -95,8 +109,8 @@
     }
 
     function spawnPipe(){
-      const minTop = 60;
-      const maxTop = GROUND_Y - PIPE_GAP - 80;
+      const minTop = 80;
+      const maxTop = GROUND_Y - PIPE_GAP - 96;
       const top = Math.max(minTop, Math.random() * maxTop);
       pipes.push({ x: WIDTH + PIPE_WIDTH, top, bottom: top + PIPE_GAP, passed: false });
     }
@@ -187,7 +201,7 @@
       ctx.fillStyle = '#ffd166';
       ctx.beginPath();
       const displayY = state.mode === 'ready'
-        ? HEIGHT / 2 + Math.sin(Date.now() / 420) * 10
+        ? HEIGHT / 2 + Math.sin(Date.now() / READY_BOB_SPEED) * 10
         : bird.y;
       ctx.arc(bird.x, displayY, BIRD_RADIUS, 0, Math.PI * 2);
       ctx.fill();

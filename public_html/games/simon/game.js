@@ -13,30 +13,50 @@
   let best = parseInt(localStorage.getItem('leeking_simon_best') || '0', 10);
   bestEl.textContent = best;
 
-  function loadSound(path, { loop = false, volume = 1 } = {}) {
+  function loadSound(path, { loop = false, volume = 1, poolSize = 4 } = {}) {
     if (!path || typeof Audio === 'undefined') {
-      return { play: () => {}, stop: () => {} };
+      return { play: () => {}, stop: () => {}, prime: () => {} };
     }
     const template = new Audio(path);
     template.preload = 'auto';
     template.volume = volume;
     template.loop = loop;
+    template.load();
+
+    const pool = [];
     let loopInstance = null;
-    return {
-      play() {
-        if (loop) {
-          if (loopInstance && !loopInstance.paused) {
-            loopInstance.currentTime = 0;
-            return loopInstance;
-          }
-          loopInstance = template.cloneNode(true);
-          loopInstance.volume = volume;
-          loopInstance.loop = true;
-          loopInstance.play().catch(() => {});
+
+    function getInstance(){
+      if (loop) {
+        if (loopInstance && !loopInstance.paused) {
           return loopInstance;
         }
+        loopInstance = template.cloneNode(true);
+        loopInstance.loop = true;
+        loopInstance.volume = volume;
+        pool.push(loopInstance);
+        return loopInstance;
+      }
+      const available = pool.find(inst => inst.paused || inst.ended);
+      if (available) {
+        available.volume = volume;
+        available.loop = false;
+        return available;
+      }
+      if (pool.length < poolSize) {
         const inst = template.cloneNode(true);
         inst.volume = volume;
+        pool.push(inst);
+        return inst;
+      }
+      return pool[0];
+    }
+
+    return {
+      play() {
+        const inst = getInstance();
+        if (!inst) return null;
+        inst.currentTime = 0;
         inst.play().catch(() => {});
         return inst;
       },
@@ -44,8 +64,26 @@
         if (loopInstance) {
           loopInstance.pause();
           loopInstance.currentTime = 0;
-          loopInstance = null;
         }
+      },
+      prime() {
+        if (loop && loopInstance && !loopInstance.paused) {
+          return;
+        }
+        try {
+          const inst = getInstance();
+          if (!inst) return;
+          const originalVolume = inst.volume;
+          inst.volume = 0;
+          inst.currentTime = 0;
+          inst.play().then(() => {
+            inst.pause();
+            inst.currentTime = 0;
+            inst.volume = originalVolume;
+          }).catch(() => {
+            inst.volume = originalVolume;
+          });
+        } catch (err) {}
       }
     };
   }
@@ -56,7 +94,7 @@
     loadSound('/assets/audio/simon/pad-3.mp3'),
     loadSound('/assets/audio/simon/pad-4.mp3')
   ];
-  const ambientSound = loadSound('/assets/audio/simon/ambient.mp3', { loop: true, volume: 0.4 });
+  const ambientSound = loadSound('/assets/audio/simon/ambient.mp3', { loop: true, volume: 0.4, poolSize: 1 });
   const loseSound = loadSound('/assets/audio/simon/lose.mp3', { volume: 0.8 });
 
   function randomPad(){
@@ -112,6 +150,9 @@
   function startGame(){
     round = 0;
     sequence = [];
+    padSounds.forEach(sound => sound.prime());
+    ambientSound.prime();
+    loseSound.prime();
     ambientSound.play();
     addStep();
   }

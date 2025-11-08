@@ -15,7 +15,7 @@
 .pad[data-pad="3"]{background:linear-gradient(135deg,#a855f7,#6366f1)}
 .pad:focus-visible{outline:3px solid rgba(255,255,255,.8);outline-offset:4px}
 .pad.active{transform:scale(1.06);box-shadow:0 10px 28px rgba(255,255,255,.4);filter:brightness(1.2)}
-.pad.showing{filter:saturate(1.8) brightness(1.25);box-shadow:0 14px 36px rgba(255,255,255,.45)}
+.pad.showing{filter:saturate(2.4) brightness(1.35);box-shadow:0 16px 44px rgba(255,255,255,.55)}
 .pad.disabled{pointer-events:none;filter:saturate(.55);opacity:.65}
 .pad.disabled.showing{filter:saturate(1.8) brightness(1.25);opacity:1}
 

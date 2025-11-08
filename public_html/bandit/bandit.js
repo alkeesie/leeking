@@ -145,56 +145,44 @@
     return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='728' height='90' viewBox='0 0 728 90'%3E%3Crect width='728' height='90' rx='18' fill='%23f2e8ff'/%3E%3Ctext x='364' y='54' text-anchor='middle' font-family='Lato,Open Sans,Arial,sans-serif' font-size='30' font-weight='600' fill='%23321b53'%3E${text}%3C/text%3E%3C/svg%3E`;
   }
 
-  function mountAd(){
+  function ensureElements(){
     const link = document.getElementById('banner-link');
-    if (!link) return;
+    if (!link) return {};
 
-    while (link.firstChild) link.removeChild(link.firstChild);
-
-    let currentMedia = null;
-    function setMedia(el){
-      if (currentMedia && currentMedia.parentNode === link) {
-        link.removeChild(currentMedia);
-      }
-      currentMedia = el;
-      if (el) link.appendChild(el);
-    }
-
-    function createImage(src, alt, label){
-      const fallback = fallbackSvg(label);
-      const img = document.createElement('img');
-      img.src = src || fallback;
-      img.alt = alt;
+    let img = document.getElementById('banner-img');
+    if (!img) {
+      img = document.createElement('img');
+      img.id = 'banner-img';
       img.width = 728;
       img.height = 90;
-      img.addEventListener('error', () => {
-        if (img.src !== fallback) {
-          img.src = fallback;
-        }
-      }, { once: true });
-      return img;
+      img.alt = '';
+      link.appendChild(img);
     }
 
-    function createVideo(poster, mp4, label){
-      if (!mp4) return null;
-      const vid = document.createElement('video');
+    let vid = document.getElementById('banner-video');
+    if (!vid) {
+      vid = document.createElement('video');
+      vid.id = 'banner-video';
       vid.width = 728;
       vid.height = 90;
-      vid.muted = true;
-      vid.loop = true;
-      vid.playsInline = true;
-      vid.preload = 'metadata';
-      vid.autoplay = true;
-      vid.setAttribute('playsinline', '');
-      vid.setAttribute('muted', '');
-      vid.setAttribute('autoplay', '');
-      vid.poster = poster || fallbackSvg(label);
-      const source = document.createElement('source');
-      source.src = mp4;
-      source.type = 'video/mp4';
-      vid.appendChild(source);
-      return vid;
+      link.appendChild(vid);
     }
+
+    vid.muted = true;
+    vid.loop = true;
+    vid.playsInline = true;
+    vid.preload = 'metadata';
+    vid.autoplay = true;
+    vid.setAttribute('playsinline', '');
+    vid.setAttribute('muted', '');
+    vid.setAttribute('autoplay', '');
+
+    return { link, img, vid };
+  }
+
+  function mountAd(){
+    const { link, img, vid } = ensureElements();
+    if (!link || !img || !vid) return;
 
     const algoName = getAlgo();
     const EPS = getEps();
@@ -232,38 +220,49 @@
 
     // Always set poster + img src (instant paint)
     const altText = arm.alt || arm.label || 'Ad';
+    const fallback = fallbackSvg(arm.label);
     link.setAttribute('aria-label', altText);
 
-    const imageSrc = imagePath || posterPath;
+    const imageSrc = imagePath || posterPath || fallback;
 
-    function showImage(){
-      const img = createImage(imageSrc, altText, arm.label);
-      setMedia(img);
+    img.alt = altText;
+    img.hidden = false;
+    img.src = imageSrc;
+    img.onerror = () => {
+      if (img.src !== fallback) {
+        img.src = fallback;
+      }
+      img.onerror = null;
+    };
+
+    function hideVideo(){
+      vid.hidden = true;
+      try { vid.pause(); } catch (err) {}
     }
 
-    function showVideo(){
-      const vid = createVideo(posterPath || imageSrc, mp4, arm.label);
-      if (!vid) {
-        showImage();
-        return;
-      }
-      vid.addEventListener('error', showImage, { once:true });
-      setMedia(vid);
+    if (useMotion && mp4) {
+      vid.hidden = false;
+      vid.poster = posterPath || imageSrc || fallback;
+      while (vid.firstChild) vid.removeChild(vid.firstChild);
+      const source = document.createElement('source');
+      source.src = mp4;
+      source.type = 'video/mp4';
+      vid.appendChild(source);
+      const onError = () => {
+        hideVideo();
+      };
+      vid.addEventListener('error', onError, { once: true });
       try {
         vid.load?.();
-        const p = vid.play?.();
-        if (p && typeof p.catch === 'function') {
-          p.catch(() => { showImage(); });
+        const playPromise = vid.play?.();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => onError());
         }
       } catch (err) {
-        showImage();
+        onError();
       }
-    }
-
-    if (useMotion) {
-      showVideo();
     } else {
-      showImage();
+      hideVideo();
     }
 
     // Log impression

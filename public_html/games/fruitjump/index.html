@@ -15,7 +15,8 @@
 <div class="ad-slot">
   <span class="badge" aria-hidden="true">AD</span>
   <a id="banner-link" href="/click.html" rel="nofollow noopener">
-    <img id="banner-fallback" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+    <img id="banner-img" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
   </a>
 </div>
 <footer>© leek.ing</footer>
@@ -28,12 +29,28 @@
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
 
+    function resizeCanvas(){
+      const availableHeight = Math.max(window.innerHeight - 220, 320);
+      const scale = Math.min(1, window.innerWidth / WIDTH, availableHeight / HEIGHT);
+      const cssWidth = Math.max(320, WIDTH * scale);
+      const cssHeight = HEIGHT * (cssWidth / WIDTH);
+      canvas.style.width = cssWidth + 'px';
+      canvas.style.height = cssHeight + 'px';
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
     const GROUND_Y = HEIGHT - 52;
-    const GRAVITY = 0.52;
-    const JUMP_VELOCITY = -11.6;
+    const GRAVITY = 0.6;
+    const JUMP_VELOCITY = -13.4;
     const PLAYER_RADIUS = 18;
-    const BASE_SPEED = 3.1;
-    const SPEED_STEP = 0.0006;
+    const BASE_SPEED = 3.25;
+    const SPEED_STEP = 0.0005;
+    const BLOCK_INTERVAL_MIN = 110;
+    const BLOCK_INTERVAL_MAX = 170;
+    const FLY_INTERVAL_MIN = 180;
+    const FLY_INTERVAL_MAX = 260;
 
     function loadSound(path, { loop = false, volume = 1 } = {}) {
       if (!path || typeof Audio === 'undefined') {
@@ -80,6 +97,8 @@
     const state = { mode: 'ready', score: 0, best: 0, frame: 0, playedLose: false };
     const player = { x: 90, y: GROUND_Y - PLAYER_RADIUS, vy: 0, grounded: true };
     let hazards = [];
+    let blockTimer = BLOCK_INTERVAL_MIN;
+    let flyTimer = FLY_INTERVAL_MIN;
 
     function reset(){
       state.mode = 'ready';
@@ -90,12 +109,14 @@
       player.y = GROUND_Y - PLAYER_RADIUS;
       player.vy = 0;
       player.grounded = true;
+      blockTimer = BLOCK_INTERVAL_MIN;
+      flyTimer = FLY_INTERVAL_MIN * 1.5;
     }
 
     function spawnBlock(){
       const height = Math.random() < 0.5 ? 42 : 72;
       const width = 48;
-      hazards.push({ type: 'block', x: WIDTH + width, width, height });
+      hazards.push({ type: 'block', x: WIDTH + width, width, height, speed: 1 });
     }
 
     function spawnFlyer(){
@@ -103,7 +124,7 @@
       const minY = GROUND_Y - 200;
       const maxY = GROUND_Y - 130;
       const y = Math.random() * (maxY - minY) + minY;
-      hazards.push({ type: 'flyer', x: WIDTH + size, y, radius: size, speed: 2.6 + Math.random() * 0.5, wobble: Math.random() * Math.PI * 2 });
+      hazards.push({ type: 'flyer', x: WIDTH + size, y, radius: size, speed: 2.6 + Math.random() * 0.8, wobble: Math.random() * Math.PI * 2 });
     }
 
     function jump(){
@@ -113,6 +134,8 @@
         state.frame = 0;
         state.playedLose = false;
         hazards = [];
+        blockTimer = BLOCK_INTERVAL_MIN;
+        flyTimer = FLY_INTERVAL_MIN;
       }
       if (state.mode !== 'play') {
         reset();
@@ -138,16 +161,25 @@
       }
 
       const speed = BASE_SPEED + SPEED_STEP * state.frame;
-      state.best = Math.max(state.best, Math.floor(state.score));
+      state.best = Math.max(state.best, state.score);
 
-      if (state.frame % 140 === 0) spawnBlock();
-      if (state.frame % 220 === 0) spawnFlyer();
+      blockTimer -= 1;
+      flyTimer -= 1;
+      if (blockTimer <= 0) {
+        spawnBlock();
+        blockTimer = Math.floor(Math.random() * (BLOCK_INTERVAL_MAX - BLOCK_INTERVAL_MIN)) + BLOCK_INTERVAL_MIN;
+      }
+      if (flyTimer <= 0) {
+        spawnFlyer();
+        flyTimer = Math.floor(Math.random() * (FLY_INTERVAL_MAX - FLY_INTERVAL_MIN)) + FLY_INTERVAL_MIN;
+      }
 
       hazards.forEach(h => {
-        const mult = h.type === 'flyer' ? h.speed : 1;
+        const mult = h.speed || (h.type === 'flyer' ? 2.8 : 1);
         h.x -= speed * mult;
         if (h.type === 'flyer') {
-          h.y += Math.sin((state.frame + h.wobble * 60) / 10) * 0.8;
+          h.wobble += 0.08;
+          h.y += Math.sin(h.wobble) * 1.6;
         }
       });
       hazards = hazards.filter(h => (h.x + (h.width || h.radius)) > -20);
@@ -171,7 +203,7 @@
           const cx = hazard.x;
           const cy = hazard.y;
           const dist = Math.hypot(cx - px, cy - py);
-          if (dist < hazard.radius + PLAYER_RADIUS * 0.7) {
+          if (dist < hazard.radius + PLAYER_RADIUS * 0.68) {
             state.mode = 'over';
             if (!state.playedLose) {
               sounds.gameOver.play();
@@ -183,7 +215,7 @@
       }
 
       if (state.mode === 'over') {
-        state.best = Math.max(state.best, Math.floor(state.score));
+        state.best = Math.max(state.best, state.score);
       }
     }
 
@@ -236,9 +268,9 @@
     function drawHUD(){
       ctx.fillStyle = '#ffffff';
       ctx.font = '32px "Lato", sans-serif';
-      ctx.fillText(Math.floor(state.score).toString(), 16, 42);
+      ctx.fillText(state.score.toFixed(1), 16, 42);
       ctx.font = '16px "Lato", sans-serif';
-      ctx.fillText(`Best: ${state.best}`, 16, 64);
+      ctx.fillText(`Best: ${state.best.toFixed(1)}`, 16, 64);
     }
 
     function drawReady(){
@@ -250,7 +282,8 @@
       ctx.font = '26px "Lora", serif';
       ctx.fillText('Fruit Jump', WIDTH / 2, HEIGHT / 2 - 18);
       ctx.font = '18px "Lato", sans-serif';
-      ctx.fillText('Tap or press space to hop over crates', WIDTH / 2, HEIGHT / 2 + 16);
+      ctx.fillText('Tap or press space to hop over crates', WIDTH / 2, HEIGHT / 2 + 4);
+      ctx.fillText('Stay alive to build your time score', WIDTH / 2, HEIGHT / 2 + 30);
       ctx.textAlign = 'left';
     }
 
@@ -263,7 +296,7 @@
       ctx.textAlign = 'center';
       ctx.fillText('Game over', WIDTH / 2, HEIGHT / 2 - 18);
       ctx.font = '18px "Lato", sans-serif';
-      ctx.fillText(`Score: ${Math.floor(state.score)}`, WIDTH / 2, HEIGHT / 2 + 12);
+      ctx.fillText(`Time survived: ${state.score.toFixed(1)}s`, WIDTH / 2, HEIGHT / 2 + 12);
       ctx.fillText('Tap or press space to play again', WIDTH / 2, HEIGHT / 2 + 42);
       ctx.textAlign = 'left';
     }

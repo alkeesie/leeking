@@ -8,6 +8,8 @@
   const FALLBACK_WORDS = ['LEMON','PLANT','BERRY','ROBOT','PIXEL','QUEEN','NINJA','FRUIT','SHAPE','ALIGN','BLOOM','CLOUD','MIRTH','SWEET','TOAST','VIVID','GLARE','FRAME','MUSIC','LIGHT'];
   const SOLUTIONS_URL = 'https://raw.githubusercontent.com/tabatkins/wordle-list/main/solutions';
   const ALLOWED_URL = 'https://raw.githubusercontent.com/tabatkins/wordle-list/main/words';
+  const CUSTOM_SOLUTIONS_URL = '/games/wordling/solutions.txt';
+  const CUSTOM_ALLOWED_URL = '/games/wordling/allowed.txt';
   const MAX_ROWS = 6;
   const COLS = 5;
 
@@ -215,25 +217,57 @@
   }
 
   async function loadDictionary(){
+    const normalise = text => text.split(/\s+/).map(w => w.trim().toUpperCase()).filter(w => w.length === 5);
+
+    async function fetchList(url, options){
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) return [];
+        const text = await response.text();
+        return normalise(text);
+      } catch (err) {
+        return [];
+      }
+    }
+
     try {
+      const customSolutions = await fetchList(CUSTOM_SOLUTIONS_URL, { cache: 'no-store' });
+      const usingCustomSolutions = customSolutions.length > 0;
+      if (usingCustomSolutions) {
+        solutionList = customSolutions;
+      }
+
+      const customAllowed = await fetchList(CUSTOM_ALLOWED_URL, { cache: 'no-store' });
+
       const [solutionsResp, allowedResp] = await Promise.all([
-        fetch(SOLUTIONS_URL, { mode: 'cors', cache: 'reload' }),
-        fetch(ALLOWED_URL, { mode: 'cors', cache: 'reload' })
+        fetch(SOLUTIONS_URL, { mode: 'cors', cache: 'reload' }).catch(() => null),
+        fetch(ALLOWED_URL, { mode: 'cors', cache: 'reload' }).catch(() => null)
       ]);
-      const normalise = text => text.split(/\s+/).map(w => w.trim().toUpperCase()).filter(w => w.length === 5);
-      if (solutionsResp.ok) {
+
+      if (!usingCustomSolutions && solutionsResp && solutionsResp.ok) {
         const text = await solutionsResp.text();
         const words = normalise(text);
         if (words.length) {
           solutionList = words;
         }
       }
+
       const allowedWords = new Set(solutionList);
-      if (allowedResp.ok) {
+
+      if (allowedResp && allowedResp.ok) {
         const text = await allowedResp.text();
         normalise(text).forEach(w => allowedWords.add(w));
       }
-      if (allowedWords.size) allowedSet = allowedWords;
+
+      if (customAllowed.length) {
+        customAllowed.forEach(word => allowedWords.add(word));
+      }
+
+      if (!allowedWords.size) {
+        FALLBACK_WORDS.forEach(w => allowedWords.add(w));
+      }
+
+      allowedSet = allowedWords;
     } catch (err) {
       console.warn('Wordling dictionary fallback in use', err);
     }

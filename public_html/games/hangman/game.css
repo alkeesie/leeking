@@ -10,12 +10,7 @@
 .hangman{display:flex;justify-content:center;margin:12px 0 24px}
 .hangman svg{width:240px;height:auto;stroke:#7a2d27;stroke-width:6;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .hangman .part{opacity:0;transition:opacity .3s ease}
-.hangman.show-1 .head{opacity:1}
-.hangman.show-2 .body{opacity:1}
-.hangman.show-3 .arm.left{opacity:1}
-.hangman.show-4 .arm.right{opacity:1}
-.hangman.show-5 .leg.left{opacity:1}
-.hangman.show-6 .leg.right{opacity:1}
+.hangman .part.visible{opacity:1}
 
 .word{display:flex;gap:10px;justify-content:center;font-family:"Lato","Open Sans",sans-serif;font-size:2.4rem;color:#2f2a30;margin-bottom:24px;letter-spacing:.12em;text-transform:uppercase}
 .word span{display:inline-block;min-width:32px;border-bottom:3px solid #d7cadf;text-align:center}

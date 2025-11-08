@@ -86,12 +86,13 @@ if (file_exists($csv)) {
   </section>
 </main>
 
-  <div class="ad-slot">
-    <span class="badge" aria-hidden="true">AD</span>
-    <a id="banner-link" href="/click.html" rel="nofollow noopener">
-      <img id="banner-fallback" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90">
-    </a>
-  </div>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-img" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
+  </a>
+</div>
 <footer>© leek.ing</footer>
 
 <script>

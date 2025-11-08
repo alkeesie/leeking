@@ -10,6 +10,7 @@
   const newGameBtn = document.getElementById('newGame');
   const winsEl = document.getElementById('wins');
   const streakEl = document.getElementById('streak');
+  const parts = Array.from(hangmanEl.querySelectorAll('.part'));
 
   let word = '';
   let revealed = [];
@@ -62,11 +63,9 @@
   }
 
   function updateHangman(){
-    const classes = ['hangman'];
-    for (let i = 1; i <= Math.min(misses, maxMisses); i++) {
-      classes.push(`show-${i}`);
-    }
-    hangmanEl.className = classes.join(' ');
+    parts.forEach((part, idx) => {
+      part.classList.toggle('visible', idx < Math.min(misses, maxMisses));
+    });
   }
 
   function handleGuess(letter, button){
