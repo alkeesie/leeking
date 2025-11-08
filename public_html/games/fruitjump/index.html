@@ -1,0 +1,227 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fruit Jump</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=4">
+<style>html,body{margin:0;background:#0b1020}</style>
+</head><body>
+<nav class="nav nav--on-dark wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+<main class="wrapper">
+  <div class="game-shell">
+    <canvas id="game"></canvas>
+  </div>
+</main>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-fallback" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+  </a>
+</div>
+<footer>© leek.ing</footer>
+<script>
+  (function(){
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const WIDTH = 480;
+    const HEIGHT = 640;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+
+    const GROUND_Y = HEIGHT - 52;
+    const GRAVITY = 0.48;
+    const JUMP_VELOCITY = -10.8;
+    const PLAYER_RADIUS = 18;
+    const BASE_SPEED = 3.2;
+    const SPEED_STEP = 0.0008;
+
+    const state = { mode: 'ready', score: 0, best: 0, frame: 0 };
+    const player = { x: 90, y: GROUND_Y - PLAYER_RADIUS, vy: 0, grounded: true };
+    let hazards = [];
+
+    function reset(){
+      state.mode = 'ready';
+      state.score = 0;
+      state.frame = 0;
+      hazards = [];
+      player.y = GROUND_Y - PLAYER_RADIUS;
+      player.vy = 0;
+      player.grounded = true;
+    }
+
+    function spawnBlock(){
+      const height = Math.random() < 0.5 ? 42 : 68;
+      const width = 42;
+      hazards.push({ type: 'block', x: WIDTH + width, width, height });
+    }
+
+    function spawnFlyer(){
+      const size = 18;
+      const minY = GROUND_Y - 190;
+      const maxY = GROUND_Y - 110;
+      const y = Math.random() * (maxY - minY) + minY;
+      hazards.push({ type: 'flyer', x: WIDTH + size, y, radius: size });
+    }
+
+    function jump(){
+      if (state.mode === 'ready') {
+        state.mode = 'play';
+        state.score = 0;
+        state.frame = 0;
+        hazards = [];
+      }
+      if (state.mode !== 'play') {
+        reset();
+        return;
+      }
+      if (!player.grounded) return;
+      player.vy = JUMP_VELOCITY;
+      player.grounded = false;
+    }
+
+    function update(){
+      if (state.mode !== 'play') return;
+      state.frame++;
+      state.score = state.frame / 60;
+
+      player.vy += GRAVITY;
+      player.y += player.vy;
+      if (player.y >= GROUND_Y - PLAYER_RADIUS) {
+        player.y = GROUND_Y - PLAYER_RADIUS;
+        player.vy = 0;
+        player.grounded = true;
+      }
+
+      const speed = BASE_SPEED + SPEED_STEP * state.frame;
+      state.best = Math.max(state.best, Math.floor(state.score));
+
+      if (state.frame % 140 === 0) spawnBlock();
+      if (state.frame % 220 === 0) spawnFlyer();
+
+      hazards.forEach(h => { h.x -= speed; });
+      hazards = hazards.filter(h => (h.x + (h.width || h.radius)) > -20);
+
+      const px = player.x;
+      const py = player.y;
+
+      for (const hazard of hazards) {
+        if (hazard.type === 'block') {
+          const withinX = px + PLAYER_RADIUS > hazard.x && px - PLAYER_RADIUS < hazard.x + hazard.width;
+          const blockTop = GROUND_Y - hazard.height;
+          if (withinX && py + PLAYER_RADIUS > blockTop) {
+            state.mode = 'over';
+            break;
+          }
+        } else {
+          const cx = hazard.x;
+          const cy = hazard.y;
+          const dist = Math.hypot(cx - px, cy - py);
+          if (dist < hazard.radius + PLAYER_RADIUS * 0.8) {
+            state.mode = 'over';
+            break;
+          }
+        }
+      }
+
+      if (state.mode === 'over') {
+        state.best = Math.max(state.best, Math.floor(state.score));
+      }
+    }
+
+    function drawBackground(){
+      ctx.fillStyle = '#0b1020';
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      ctx.fillStyle = '#141b33';
+      ctx.fillRect(0, GROUND_Y, WIDTH, HEIGHT - GROUND_Y);
+    }
+
+    function drawPlayer(){
+      const bob = state.mode === 'ready' ? Math.sin(Date.now() / 420) * 6 : 0;
+      const displayY = state.mode === 'ready' ? GROUND_Y - PLAYER_RADIUS - 6 + bob : player.y;
+      ctx.fillStyle = '#ffa94d';
+      ctx.beginPath();
+      ctx.arc(player.x, displayY, PLAYER_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffca80';
+      ctx.beginPath();
+      ctx.arc(player.x + 6, displayY - 8, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawHazards(){
+      hazards.forEach(hazard => {
+        if (hazard.type === 'block') {
+          ctx.fillStyle = '#f1d6b8';
+          const top = GROUND_Y - hazard.height;
+          ctx.fillRect(hazard.x, top, hazard.width, hazard.height);
+        } else {
+          ctx.fillStyle = '#ff5c7a';
+          ctx.beginPath();
+          ctx.arc(hazard.x, hazard.y, hazard.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+
+    function drawHUD(){
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '32px "Lato", sans-serif';
+      ctx.fillText(Math.floor(state.score).toString(), 16, 42);
+      ctx.font = '16px "Lato", sans-serif';
+      ctx.fillText(`Best: ${state.best}`, 16, 64);
+    }
+
+    function drawReady(){
+      if (state.mode !== 'ready') return;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(44, HEIGHT / 2 - 80, WIDTH - 88, 160);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = '26px "Lora", serif';
+      ctx.fillText('Fruit Jump', WIDTH / 2, HEIGHT / 2 - 18);
+      ctx.font = '18px "Lato", sans-serif';
+      ctx.fillText('Tap or press space to hop over crates', WIDTH / 2, HEIGHT / 2 + 16);
+      ctx.textAlign = 'left';
+    }
+
+    function drawGameOver(){
+      if (state.mode !== 'over') return;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(36, HEIGHT / 2 - 80, WIDTH - 72, 160);
+      ctx.fillStyle = '#fff';
+      ctx.font = '28px "Lora", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Game over', WIDTH / 2, HEIGHT / 2 - 18);
+      ctx.font = '18px "Lato", sans-serif';
+      ctx.fillText(`Score: ${state.score}`, WIDTH / 2, HEIGHT / 2 + 12);
+      ctx.fillText('Tap or press space to play again', WIDTH / 2, HEIGHT / 2 + 42);
+      ctx.textAlign = 'left';
+    }
+
+    function loop(){
+      update();
+      drawBackground();
+      drawPlayer();
+      drawHazards();
+      drawHUD();
+      drawReady();
+      drawGameOver();
+      requestAnimationFrame(loop);
+    }
+
+    function handleKey(e){
+      if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
+      }
+    }
+
+    canvas.addEventListener('pointerdown', jump);
+    window.addEventListener('keydown', handleKey);
+
+    reset();
+    loop();
+  })();
+</script>
+<script defer src="/bandit/bandit.js?v=4"></script>
+</body></html>
