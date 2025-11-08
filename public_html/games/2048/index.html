@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2048 Remix</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=5">
+<link rel="stylesheet" href="/games/2048/game.css?v=1">
+<style>html,body{height:100%;overflow:hidden;background:#f5efe3}</style>
+</head><body class="game-page">
+<nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+<main class="wrapper">
+  <div class="game-shell game-shell--light">
+    <header class="twenty-header">
+      <div>
+        <h1>2048 Remix</h1>
+        <p>Swipe or use arrow keys to merge tiles. Can you reach the glittering blobs?</p>
+      </div>
+      <div class="scoreboard">
+        <div class="score-box"><span class="label">Score</span><span id="score">0</span></div>
+        <div class="score-box"><span class="label">Best</span><span id="best">0</span></div>
+      </div>
+    </header>
+    <div class="grid" id="grid" role="grid" aria-label="2048 board"></div>
+    <div class="controls">
+      <button class="btn secondary" id="restart">Restart</button>
+    </div>
+    <p class="note">Tip: numbers beyond 2048 are shortened so the board stays readable on phones.</p>
+  </div>
+</main>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-img" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
+  </a>
+</div>
+<footer>© leek.ing</footer>
+<script defer src="/games/2048/game.js?v=1"></script>
+<script defer src="/bandit/bandit.js?v=5"></script>
+</body></html>
