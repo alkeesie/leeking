@@ -3,10 +3,10 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Flappy Clone</title>
 <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=3">
+<link rel="stylesheet" href="/styles.css">
 <style>html,body{margin:0;background:#0b1020}</style>
 </head><body>
-<nav class="nav nav--on-dark wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+<nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/about.html">About the experiment</a></nav>
 <main class="wrapper">
   <div class="game-shell">
     <canvas id="game"></canvas>
@@ -14,167 +14,29 @@
 </main>
 <div class="ad-slot">
   <span class="badge" aria-hidden="true">AD</span>
-  <a id="banner-link" href="/click.html" rel="nofollow noopener">
-    <img id="banner-fallback" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+  <a id="banner-link" href="#" rel="nofollow noopener">
+    <img id="banner-img" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90" style="display:block;width:100%;height:auto">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
   </a>
 </div>
 <footer>© leek.ing</footer>
+<script src="https://unpkg.com/kaboom/dist/kaboom.js"></script>
 <script>
-  (function(){
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    const WIDTH = 480;
-    const HEIGHT = 640;
-    canvas.width = WIDTH;
-    canvas.height = HEIGHT;
-
-    const GROUND_Y = HEIGHT - 56;
-    const BIRD_RADIUS = 14;
-    const GRAVITY = 0.5;
-    const FLAP_VELOCITY = -8.5;
-    const PIPE_GAP = 150;
-    const PIPE_WIDTH = 72;
-    const PIPE_SPEED = 2.6;
-    const SPAWN_INTERVAL = 120;
-
-    const state = { mode: 'play', score: 0, best: 0, frame: 0 };
-    const bird = { x: WIDTH * 0.25, y: HEIGHT / 2, vy: 0 };
-    let pipes = [];
-
-    function resetGame(){
-      state.mode = 'play';
-      state.score = 0;
-      state.frame = 0;
-      bird.y = HEIGHT / 2;
-      bird.vy = 0;
-      pipes = [];
-      spawnPipe();
-    }
-
-    function spawnPipe(){
-      const minTop = 60;
-      const maxTop = GROUND_Y - PIPE_GAP - 80;
-      const top = Math.max(minTop, Math.random() * maxTop);
-      pipes.push({ x: WIDTH + PIPE_WIDTH, top, bottom: top + PIPE_GAP, passed: false });
-    }
-
-    function flap(){
-      if (state.mode !== 'play') {
-        resetGame();
-        return;
-      }
-      bird.vy = FLAP_VELOCITY;
-    }
-
-    function update(){
-      if (state.mode !== 'play') return;
-
-      state.frame++;
-      bird.vy += GRAVITY;
-      bird.y += bird.vy;
-
-      if (state.frame % SPAWN_INTERVAL === 0) {
-        spawnPipe();
-      }
-
-      pipes.forEach(pipe => { pipe.x -= PIPE_SPEED; });
-      pipes = pipes.filter(pipe => pipe.x + PIPE_WIDTH > -10);
-
-      pipes.forEach(pipe => {
-        if (!pipe.passed && pipe.x + PIPE_WIDTH < bird.x) {
-          pipe.passed = true;
-          state.score += 1;
-          state.best = Math.max(state.best, state.score);
-        }
-      });
-
-      if (bird.y + BIRD_RADIUS >= GROUND_Y || bird.y - BIRD_RADIUS <= 0) {
-        state.mode = 'over';
-        return;
-      }
-
-      for (const pipe of pipes) {
-        const withinX = bird.x + BIRD_RADIUS > pipe.x && bird.x - BIRD_RADIUS < pipe.x + PIPE_WIDTH;
-        const hitTop = bird.y - BIRD_RADIUS < pipe.top;
-        const hitBottom = bird.y + BIRD_RADIUS > pipe.bottom;
-        if (withinX && (hitTop || hitBottom)) {
-          state.mode = 'over';
-          break;
-        }
-      }
-    }
-
-    function drawBackground(){
-      ctx.fillStyle = '#0b1020';
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-      ctx.fillStyle = '#141b33';
-      ctx.fillRect(0, GROUND_Y, WIDTH, HEIGHT - GROUND_Y);
-    }
-
-    function drawPipes(){
-      ctx.fillStyle = '#60a0ff';
-      pipes.forEach(pipe => {
-        ctx.fillRect(pipe.x, 0, PIPE_WIDTH, pipe.top);
-        ctx.fillRect(pipe.x, pipe.bottom, PIPE_WIDTH, HEIGHT - pipe.bottom);
-      });
-    }
-
-    function drawBird(){
-      ctx.fillStyle = '#ffd166';
-      ctx.beginPath();
-      ctx.arc(bird.x, bird.y, BIRD_RADIUS, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#f3722c';
-      ctx.beginPath();
-      ctx.arc(bird.x + 10, bird.y, 6, -0.3, Math.PI * 0.3);
-      ctx.fill();
-    }
-
-    function drawScore(){
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '32px "Lato", sans-serif';
-      ctx.fillText(state.score.toString(), 16, 42);
-      ctx.font = '16px "Lato", sans-serif';
-      ctx.fillText(`Best: ${state.best}`, 16, 64);
-    }
-
-    function drawGameOver(){
-      if (state.mode !== 'over') return;
-      ctx.fillStyle = 'rgba(0,0,0,0.55)';
-      ctx.fillRect(40, HEIGHT / 2 - 80, WIDTH - 80, 160);
-      ctx.fillStyle = '#fff';
-      ctx.font = '28px "Lora", serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('Game over', WIDTH / 2, HEIGHT / 2 - 18);
-      ctx.font = '18px "Lato", sans-serif';
-      ctx.fillText(`Score: ${state.score}`, WIDTH / 2, HEIGHT / 2 + 12);
-      ctx.fillText('Tap or press space to try again', WIDTH / 2, HEIGHT / 2 + 42);
-      ctx.textAlign = 'left';
-    }
-
-    function loop(){
-      update();
-      drawBackground();
-      drawPipes();
-      drawBird();
-      drawScore();
-      drawGameOver();
-      requestAnimationFrame(loop);
-    }
-
-    function handleKey(e){
-      if (e.code === 'Space') {
-        e.preventDefault();
-        flap();
-      }
-    }
-
-    canvas.addEventListener('pointerdown', flap);
-    window.addEventListener('keydown', handleKey);
-
-    resetGame();
-    loop();
-  })();
+  kaboom({ canvas: document.querySelector('#game'), width: 480, height: 640, background: [11,16,32] });
+  gravity(1200);
+  const FLOOR = height() - 40; add([rect(width(), 40), pos(0, FLOOR), area(), solid(), color(20,26,46)]);
+  const bird = add([pos(120, height()/2), rect(24,18), color(255,209,102), area(), body(), anchor('center'), 'bird']);
+  const JUMP = 360; onKeyPress('space', () => bird.jump(JUMP)); onClick(() => bird.jump(JUMP));
+  let score=0; const label = add([ text('0'), pos(12,12) ]);
+  function spawn(){ const GAP=140, W=52, speed=180, t=rand(120, height()-220);
+    add([pos(width(), t-GAP/2-height()), rect(W,height()), color(96,160,255), area(), move(LEFT,speed), 'pipe']);
+    add([pos(width(), t+GAP/2), rect(W,height()), color(96,160,255), area(), move(LEFT,speed), 'pipe']);
+    const g = add([pos(width()+W,0), area({width:2,height:height()}), move(LEFT,speed), 'gate']);
+    g.onUpdate(()=>{ if (g.isColliding(bird)) { score++; label.text=score+''; destroy(g);} });
+  }
+  loop(1.2, spawn); spawn(); wait(.6, spawn);
+  bird.onCollide('pipe', ()=>go('over')); bird.onUpdate(()=>{ if (bird.pos.y>FLOOR || bird.pos.y<0) go('over'); });
+  scene('over', ()=>{ add([text(`Game Over\nScore: ${score}\nPress Space/Click`), pos(width()/2,height()/2), anchor('center')]); onKeyPress(()=>location.reload()); onClick(()=>location.reload()); });
 </script>
-<script defer src="/bandit/bandit.js?v=4"></script>
+<script defer src="/bandit/bandit.js"></script>
 </body></html>

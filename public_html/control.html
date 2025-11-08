@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="/styles.css?v=3">
 </head>
 <body>
-  <nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
-  <main class="wrapper" data-control-locked hidden>
+  <nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/control.html" aria-current="page">Control panel</a><a href="/about.html">About the experiment</a></nav>
+  <main class="wrapper">
     <section class="hero" aria-labelledby="control-title">
       <div class="hero-brand" aria-hidden="true">leek.ing</div>
       <h1 class="h1" id="control-title"><span class="hero-heading-light">Tune the bandit </span><span class="hero-heading-serif">Adjust algorithms &amp; ads</span></h1>
@@ -68,41 +68,15 @@
     </section>
   </main>
 
-  <div class="ad-slot" data-control-locked hidden>
+  <div class="ad-slot">
     <span class="badge" aria-hidden="true">AD</span>
     <a id="banner-link" href="/click.html" rel="nofollow noopener">
-      <img id="banner-fallback" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90">
+      <img id="banner-img" src="/assets/banners/control_static.png" alt="VI Online Arcade — Play now" width="728" height="90">
+      <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
     </a>
   </div>
 
-  <footer data-control-locked hidden>© leek.ing</footer>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const PASSWORD = 'S3minar$r';
-      const KEY = 'bandit_control_auth';
-      const locked = document.querySelectorAll('[data-control-locked]');
-
-      function unlock(){ locked.forEach(el => { el.hidden = false; }); }
-
-      if (sessionStorage.getItem(KEY) === 'yes') { unlock(); return; }
-
-      let attempts = 0;
-      while (attempts < 3) {
-        const input = prompt('Enter the control panel password:');
-        if (input === null) { break; }
-        if (input === PASSWORD) {
-          sessionStorage.setItem(KEY, 'yes');
-          unlock();
-          return;
-        }
-        attempts++;
-        alert('Incorrect password.');
-      }
-      alert('Redirecting to the home page.');
-      window.location.href = '/';
-    });
-  </script>
+  <footer>© leek.ing</footer>
 
   <script>
     function initControls(){
@@ -174,6 +148,6 @@
 
     document.addEventListener('DOMContentLoaded', initControls);
   </script>
-  <script defer src="/bandit/bandit.js?v=4"></script>
+  <script defer src="/bandit/bandit.js?v=3"></script>
 </body>
 </html>

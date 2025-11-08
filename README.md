@@ -7,13 +7,12 @@ This repository contains the leek.ing promotional arcade site used to demonstrat
 The deployable web root lives in `public_html/` and includes:
 
 - `index.html` — landing page with the rotating banner slot and quick links to games.
-- `games/` — lightweight vanilla-canvas games (Flappy, Fruit Jump) plus the GoogolMe estimation challenge.
+- `games/` — lightweight Kaboom.js games (Flappy, Fruit Jump) plus the GoogolMe estimation challenge.
 - `bandit/` — front-end algorithm implementation and the PHP logger that appends events to `bandit/logs/bandit_log.csv`.
-- `dashboard.php` — CSV-backed analytics dashboard summarising performance and regret.
-- `control.html` — password-gated control panel for switching algorithms and managing banner arms (password: `S3minar$r`).
+- `dashboard.php` — CSV-backed analytics dashboard with controls for tuning the bandit.
 - `assets/` — banner creative slots (bring your own MP4/PNG files) and the leek.ing logo.
 
-The repository ships **without** the MP4/PNG banner creatives so you can collaborate without committing large binaries. Drop your production-ready 728x90 assets into `public_html/assets/banners/` before deploying (the filenames referenced by default are `control_static`, `games_rock`, `pac_click`, and `pink_replay`). At minimum provide the `.png` poster for each arm so the banner has a static fallback if motion is disabled.
+The repository ships **without** the MP4/PNG banner creatives so you can collaborate without committing large binaries. Drop your production-ready 728x90 assets into `public_html/assets/banners/` before deploying. At minimum provide the `.png` poster for each arm so the banner has a static fallback if motion is disabled.
 
 ## Deploying to WebHostMost (or similar shared hosts)
 
@@ -21,7 +20,6 @@ The repository ships **without** the MP4/PNG banner creatives so you can collabo
 2. Ensure the `/bandit/logs/` directory is writable by the web server user. On WebHostMost you can accomplish this from the file manager by selecting the folder and setting permissions to `0755` (or `chmod 755 bandit/logs` over SSH).
 3. Visit your domain to confirm the landing page loads and that clicking the rotating banner reaches `/click.html`.
 4. Load `/dashboard.php` after a few impressions to verify the CSV logger is appending rows and that the charts render. If the charts are empty, double-check that `bandit/logs/bandit_log.csv` exists and is writable.
-5. Access `/control.html` and enter the password `S3minar$r` to confirm the control panel loads. The lock is a light deterrent so the password is stored in session storage during your visit.
 
 ## Working locally and committing changes
 
