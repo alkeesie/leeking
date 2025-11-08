@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simon Lights</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=5">
+<link rel="stylesheet" href="/games/simon/game.css?v=1">
+<style>html,body{margin:0;background:#0b1020;height:100%;overflow:hidden}</style>
+</head><body class="game-page">
+<nav class="nav nav--on-dark wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+<main class="wrapper">
+  <div class="game-shell">
+    <header class="simon-header">
+      <div>
+        <h1>Simon Lights</h1>
+        <p>Memorise the light sequence and tap the pads in order. How far can you go?</p>
+      </div>
+      <div class="scoreboard">
+        <div class="score-box"><span class="label">Round</span><span id="round">0</span></div>
+        <div class="score-box"><span class="label">Best</span><span id="best">0</span></div>
+      </div>
+    </header>
+    <div class="pad-grid" id="padGrid" aria-label="Simon pads">
+      <button class="pad" data-pad="0" aria-label="Pink pad"></button>
+      <button class="pad" data-pad="1" aria-label="Teal pad"></button>
+      <button class="pad" data-pad="2" aria-label="Sun pad"></button>
+      <button class="pad" data-pad="3" aria-label="Violet pad"></button>
+    </div>
+    <div class="controls">
+      <button class="btn" id="start">Start</button>
+      <button class="btn secondary" id="strict">Strict mode: Off</button>
+    </div>
+    <p class="note">Strict mode ends the game on any mistake; otherwise you can rewatch the sequence.</p>
+  </div>
+</main>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-fallback" src="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+  </a>
+</div>
+<footer>© leek.ing</footer>
+<script defer src="/games/simon/game.js?v=1"></script>
+<script defer src="/bandit/bandit.js?v=5"></script>
+</body></html>
