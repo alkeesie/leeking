@@ -1,0 +1,330 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fruit Jump</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=5">
+<style>html,body{margin:0;background:#0b1020;height:100%;overflow:hidden}canvas{touch-action:none}</style>
+</head><body class="game-page">
+<nav class="nav nav--on-dark wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+<main class="wrapper">
+  <div class="game-shell">
+    <canvas id="game"></canvas>
+  </div>
+</main>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='728' height='90' viewBox='0 0 728 90'%3E%3Crect width='728' height='90' rx='18' fill='%23f2e8ff'/%3E%3Ctext x='364' y='54' text-anchor='middle' font-family='Lato,Open Sans,Arial,sans-serif' font-size='30' font-weight='600' fill='%23321b53'%3EAd%20loading%E2%80%A6%3C/text%3E%3C/svg%3E" data-poster="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
+  </a>
+</div>
+<footer>© leek.ing</footer>
+<script>
+  (function(){
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const WIDTH = 480;
+    const HEIGHT = 640;
+    canvas.width = WIDTH;
+    canvas.height = HEIGHT;
+
+    function resizeCanvas(){
+      const availableHeight = Math.max(window.innerHeight - 220, 320);
+      const scale = Math.min(1, window.innerWidth / WIDTH, availableHeight / HEIGHT);
+      const cssWidth = Math.max(320, WIDTH * scale);
+      const cssHeight = HEIGHT * (cssWidth / WIDTH);
+      canvas.style.width = cssWidth + 'px';
+      canvas.style.height = cssHeight + 'px';
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    const GROUND_Y = HEIGHT - 52;
+    const GRAVITY = 0.6;
+    const JUMP_VELOCITY = -13.4;
+    const PLAYER_RADIUS = 18;
+    const BASE_SPEED = 3.25;
+    const SPEED_STEP = 0.0005;
+    const BLOCK_INTERVAL_MIN = 110;
+    const BLOCK_INTERVAL_MAX = 170;
+    const FLY_INTERVAL_MIN = 180;
+    const FLY_INTERVAL_MAX = 260;
+
+    function loadSound(path, { loop = false, volume = 1 } = {}) {
+      if (!path || typeof Audio === 'undefined') {
+        return { play: () => {}, stop: () => {} };
+      }
+      const template = new Audio(path);
+      template.preload = 'auto';
+      template.volume = volume;
+      template.loop = loop;
+      let loopInstance = null;
+      return {
+        play() {
+          if (loop) {
+            if (loopInstance && !loopInstance.paused) {
+              loopInstance.currentTime = 0;
+              return loopInstance;
+            }
+            loopInstance = template.cloneNode(true);
+            loopInstance.volume = volume;
+            loopInstance.loop = true;
+            loopInstance.play().catch(() => {});
+            return loopInstance;
+          }
+          const inst = template.cloneNode(true);
+          inst.volume = volume;
+          inst.play().catch(() => {});
+          return inst;
+        },
+        stop() {
+          if (loopInstance) {
+            loopInstance.pause();
+            loopInstance.currentTime = 0;
+            loopInstance = null;
+          }
+        }
+      };
+    }
+
+    const sounds = {
+      jump: loadSound('/assets/audio/fruitjump/jump.mp3'),
+      gameOver: loadSound('/assets/audio/fruitjump/game_over.mp3')
+    };
+
+    const state = { mode: 'ready', score: 0, best: 0, frame: 0, playedLose: false };
+    const player = { x: 90, y: GROUND_Y - PLAYER_RADIUS, vy: 0, grounded: true };
+    let hazards = [];
+    let blockTimer = BLOCK_INTERVAL_MIN;
+    let flyTimer = FLY_INTERVAL_MIN;
+
+    function reset(){
+      state.mode = 'ready';
+      state.score = 0;
+      state.frame = 0;
+      state.playedLose = false;
+      hazards = [];
+      player.y = GROUND_Y - PLAYER_RADIUS;
+      player.vy = 0;
+      player.grounded = true;
+      blockTimer = BLOCK_INTERVAL_MIN;
+      flyTimer = FLY_INTERVAL_MIN * 1.5;
+    }
+
+    function spawnBlock(){
+      const height = Math.random() < 0.5 ? 42 : 72;
+      const width = 48;
+      hazards.push({ type: 'block', x: WIDTH + width, width, height, speed: 1 });
+    }
+
+    function spawnFlyer(){
+      const size = 16;
+      const minY = GROUND_Y - 200;
+      const maxY = GROUND_Y - 130;
+      const y = Math.random() * (maxY - minY) + minY;
+      hazards.push({ type: 'flyer', x: WIDTH + size, y, radius: size, speed: 2.6 + Math.random() * 0.8, wobble: Math.random() * Math.PI * 2 });
+    }
+
+    function jump(){
+      if (state.mode === 'ready') {
+        state.mode = 'play';
+        state.score = 0;
+        state.frame = 0;
+        state.playedLose = false;
+        hazards = [];
+        blockTimer = BLOCK_INTERVAL_MIN;
+        flyTimer = FLY_INTERVAL_MIN;
+      }
+      if (state.mode !== 'play') {
+        reset();
+        return;
+      }
+      if (!player.grounded) return;
+      player.vy = JUMP_VELOCITY;
+      player.grounded = false;
+      sounds.jump.play();
+    }
+
+    function update(){
+      if (state.mode !== 'play') return;
+      state.frame++;
+      state.score = state.frame / 60;
+
+      player.vy += GRAVITY;
+      player.y += player.vy;
+      if (player.y >= GROUND_Y - PLAYER_RADIUS) {
+        player.y = GROUND_Y - PLAYER_RADIUS;
+        player.vy = 0;
+        player.grounded = true;
+      }
+
+      const speed = BASE_SPEED + SPEED_STEP * state.frame;
+      state.best = Math.max(state.best, state.score);
+
+      blockTimer -= 1;
+      flyTimer -= 1;
+      if (blockTimer <= 0) {
+        spawnBlock();
+        blockTimer = Math.floor(Math.random() * (BLOCK_INTERVAL_MAX - BLOCK_INTERVAL_MIN)) + BLOCK_INTERVAL_MIN;
+      }
+      if (flyTimer <= 0) {
+        spawnFlyer();
+        flyTimer = Math.floor(Math.random() * (FLY_INTERVAL_MAX - FLY_INTERVAL_MIN)) + FLY_INTERVAL_MIN;
+      }
+
+      hazards.forEach(h => {
+        const mult = h.speed || (h.type === 'flyer' ? 2.8 : 1);
+        h.x -= speed * mult;
+        if (h.type === 'flyer') {
+          h.wobble += 0.08;
+          h.y += Math.sin(h.wobble) * 1.6;
+        }
+      });
+      hazards = hazards.filter(h => (h.x + (h.width || h.radius)) > -20);
+
+      const px = player.x;
+      const py = player.y;
+
+      for (const hazard of hazards) {
+        if (hazard.type === 'block') {
+          const withinX = px + PLAYER_RADIUS > hazard.x && px - PLAYER_RADIUS < hazard.x + hazard.width;
+          const blockTop = GROUND_Y - hazard.height;
+          if (withinX && py + PLAYER_RADIUS > blockTop) {
+            state.mode = 'over';
+            if (!state.playedLose) {
+              sounds.gameOver.play();
+              state.playedLose = true;
+            }
+            break;
+          }
+        } else {
+          const cx = hazard.x;
+          const cy = hazard.y;
+          const dist = Math.hypot(cx - px, cy - py);
+          if (dist < hazard.radius + PLAYER_RADIUS * 0.68) {
+            state.mode = 'over';
+            if (!state.playedLose) {
+              sounds.gameOver.play();
+              state.playedLose = true;
+            }
+            break;
+          }
+        }
+      }
+
+      if (state.mode === 'over') {
+        state.best = Math.max(state.best, state.score);
+      }
+    }
+
+    function drawBackground(){
+      ctx.fillStyle = '#0b1020';
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+      ctx.fillStyle = '#141b33';
+      ctx.fillRect(0, GROUND_Y, WIDTH, HEIGHT - GROUND_Y);
+    }
+
+    function drawPlayer(){
+      const bob = state.mode === 'ready' ? Math.sin(Date.now() / 420) * 6 : 0;
+      const displayY = state.mode === 'ready' ? GROUND_Y - PLAYER_RADIUS - 6 + bob : player.y;
+      ctx.fillStyle = '#ffa94d';
+      ctx.beginPath();
+      ctx.arc(player.x, displayY, PLAYER_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffca80';
+      ctx.beginPath();
+      ctx.arc(player.x + 6, displayY - 8, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawHazards(){
+      hazards.forEach(hazard => {
+        if (hazard.type === 'block') {
+          ctx.fillStyle = '#f1d6b8';
+          const top = GROUND_Y - hazard.height;
+          ctx.fillRect(hazard.x, top, hazard.width, hazard.height);
+          ctx.fillStyle = '#d9c3a3';
+          ctx.fillRect(hazard.x + 6, top + 6, hazard.width - 12, hazard.height - 12);
+        } else {
+          ctx.fillStyle = '#ff5c7a';
+          ctx.beginPath();
+          ctx.ellipse(hazard.x, hazard.y, hazard.radius + 6, hazard.radius, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffe5ef';
+          ctx.beginPath();
+          ctx.ellipse(hazard.x - 6, hazard.y - 4, hazard.radius / 1.6, hazard.radius / 2.1, 0, 0, Math.PI * 2);
+          ctx.ellipse(hazard.x + 6, hazard.y - 4, hazard.radius / 1.6, hazard.radius / 2.1, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#2f2a30';
+          ctx.beginPath();
+          ctx.arc(hazard.x + 4, hazard.y + 2, hazard.radius / 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+
+    function drawHUD(){
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '32px "Lato", sans-serif';
+      ctx.fillText(state.score.toFixed(1), 16, 42);
+      ctx.font = '16px "Lato", sans-serif';
+      ctx.fillText(`Best: ${state.best.toFixed(1)}`, 16, 64);
+    }
+
+    function drawReady(){
+      if (state.mode !== 'ready') return;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(44, HEIGHT / 2 - 80, WIDTH - 88, 160);
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.font = '26px "Lora", serif';
+      ctx.fillText('Fruit Jump', WIDTH / 2, HEIGHT / 2 - 18);
+      ctx.font = '18px "Lato", sans-serif';
+      ctx.fillText('Tap or press space to hop over crates', WIDTH / 2, HEIGHT / 2 + 4);
+      ctx.fillText('Stay alive to build your time score', WIDTH / 2, HEIGHT / 2 + 30);
+      ctx.textAlign = 'left';
+    }
+
+    function drawGameOver(){
+      if (state.mode !== 'over') return;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(36, HEIGHT / 2 - 80, WIDTH - 72, 160);
+      ctx.fillStyle = '#fff';
+      ctx.font = '28px "Lora", serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('Game over', WIDTH / 2, HEIGHT / 2 - 18);
+      ctx.font = '18px "Lato", sans-serif';
+      ctx.fillText(`Time survived: ${state.score.toFixed(1)}s`, WIDTH / 2, HEIGHT / 2 + 12);
+      ctx.fillText('Tap or press space to play again', WIDTH / 2, HEIGHT / 2 + 42);
+      ctx.textAlign = 'left';
+    }
+
+    function loop(){
+      update();
+      drawBackground();
+      drawPlayer();
+      drawHazards();
+      drawHUD();
+      drawReady();
+      drawGameOver();
+      requestAnimationFrame(loop);
+    }
+
+    function handleKey(e){
+      if (e.code === 'Space') {
+        e.preventDefault();
+        jump();
+      }
+    }
+
+    canvas.addEventListener('pointerdown', jump);
+    window.addEventListener('keydown', handleKey);
+
+    reset();
+    loop();
+  })();
+</script>
+<script defer src="/bandit/bandit.js?v=5"></script>
+</body></html>

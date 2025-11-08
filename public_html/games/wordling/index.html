@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wordling</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;900&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=5">
+<link rel="stylesheet" href="/games/wordling/game.css?v=1">
+<style>html,body{height:100%;overflow:hidden;background:#0b1020}</style>
+</head><body class="game-page">
+<nav class="nav wrapper"><a class="brand" href="/">leek.ing</a><a href="/dashboard.php">Bandit dashboard</a><a href="/about.html">About the experiment</a></nav>
+<main class="wrapper">
+  <div class="game-shell game-shell--light">
+    <header class="wordling-header">
+      <div>
+        <h1>Wordling</h1>
+        <p>Guess the five-letter word in six tries. Letters flip as you uncover the secret.</p>
+      </div>
+      <div class="scoreboard">
+        <div class="score-box"><span class="label">Wins</span><span id="wins">0</span></div>
+        <div class="score-box"><span class="label">Streak</span><span id="streak">0</span></div>
+      </div>
+    </header>
+    <div class="board" id="board" aria-label="Word puzzle board"></div>
+    <div class="keyboard" id="keyboard"></div>
+    <div class="controls">
+      <button class="btn secondary" id="newGame">New word</button>
+    </div>
+    <p class="note">Tap letters or use your keyboard. Accents and proper nouns are out.</p>
+  </div>
+</main>
+<div class="ad-slot">
+  <span class="badge" aria-hidden="true">AD</span>
+  <a id="banner-link" href="/click.html" rel="nofollow noopener">
+    <img id="banner-img" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='728' height='90' viewBox='0 0 728 90'%3E%3Crect width='728' height='90' rx='18' fill='%23f2e8ff'/%3E%3Ctext x='364' y='54' text-anchor='middle' font-family='Lato,Open Sans,Arial,sans-serif' font-size='30' font-weight='600' fill='%23321b53'%3EAd%20loading%E2%80%A6%3C/text%3E%3C/svg%3E" data-poster="/assets/banners/control_static.png" alt="Ad" width="728" height="90">
+    <video id="banner-video" width="728" height="90" muted playsinline loop preload="metadata"></video>
+  </a>
+</div>
+<footer>© leek.ing</footer>
+<script defer src="/games/wordling/game.js?v=1"></script>
+<script defer src="/bandit/bandit.js?v=5"></script>
+</body></html>
